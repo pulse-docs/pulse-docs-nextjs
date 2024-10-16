@@ -1,3 +1,4 @@
+import Button from '@mui/material/Button'
 export default function Dashboard() {
   return (
     <div className="container">
@@ -8,6 +9,7 @@ export default function Dashboard() {
           <br />
           Build the important stuff.
         </p>
+          <Button variant="contained">Hello World</Button>
       </div>
       <section className="next-steps-section">
         <h2 className="text-heading-1">Next steps for you</h2>
