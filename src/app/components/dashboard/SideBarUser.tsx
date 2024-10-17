@@ -1,7 +1,7 @@
 'use client';
 import {Avatar, Box, IconButton, Typography} from "@mui/material";
 import SettingsIcon from "@mui/icons-material/Settings";
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 
 
 
@@ -27,13 +27,23 @@ type UserResponse = {
 
 export default function SideBarUser(){
     const [user, setUser] = useState<User |null>(null);
+    const hasFetched = useRef(false)
     useEffect(() => {
-        fetch("/api/user")
-            .then((res) => res.json())
-            .then((data) => {
-                setUser(data.user);
-                console.log(data);
-            });
+        if (!hasFetched.current) {
+            hasFetched.current = true;
+
+            fetch("/api/user")
+                .then((res) => res.json())
+                .then((data) => {
+                    setUser(data.user);
+                    console.log(data);
+                })
+                .catch((err) => {
+                    console.error(err);
+                });
+
+
+        }
     }, []);
 
     return (
@@ -47,11 +57,12 @@ export default function SideBarUser(){
                 <Typography variant="h6" sx={{ fontWeight: "bold" }}>
                     {user?.given_name + " " + user?.family_name}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
-                    {user?.email}
-                </Typography>
+                {/*<Typography variant="body2" color="text.secondary">*/}
+                {/*    {user?.email}*/}
+                {/*</Typography>*/}
             </Box>
             <IconButton sx={{ marginLeft: "auto" }}>
+                {/* TODO: This should link to the user settings page */}
                 <SettingsIcon />
             </IconButton>
         </Box>

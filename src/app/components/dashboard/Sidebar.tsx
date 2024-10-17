@@ -25,6 +25,7 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import {LogoutLink} from "@kinde-oss/kinde-auth-nextjs/components";
 import {useEffect} from "react";
 import SideBarUser from "@/app/components/dashboard/SideBarUser";
+import {FileUpload, Psychology, Visibility} from "@mui/icons-material";
 
 const drawerWidth = 280;
 
@@ -90,29 +91,29 @@ const Sidebar = ({ onThemeChange, currentTheme }: {
                 </ListItem>
 
                 <ListItem disablePadding>
-                    <ListItemButton component="a" href="/dashboard/accounts">
+                    <ListItemButton component="a" href="/dashboard/inspect">
                         <ListItemIcon>
-                            <AccountBalanceWalletIcon />
+                            <Visibility />
                         </ListItemIcon>
-                        <ListItemText primary="Accounts" />
+                        <ListItemText primary="Inspect" />
                     </ListItemButton>
                 </ListItem>
 
                 <ListItem disablePadding>
-                    <ListItemButton component="a" href="/dashboard/cards">
+                    <ListItemButton component="a" href="/dashboard/gpt">
                         <ListItemIcon>
-                            <CreditCardIcon />
+                            <Psychology />
                         </ListItemIcon>
-                        <ListItemText primary="Cards" />
+                        <ListItemText primary="GPT" />
                     </ListItemButton>
                 </ListItem>
 
                 <ListItem disablePadding>
                     <ListItemButton component="a" href="/dashboard/transactions">
                         <ListItemIcon>
-                            <ReceiptIcon />
+                            <FileUpload />
                         </ListItemIcon>
-                        <ListItemText primary="Transactions" />
+                        <ListItemText primary="Upload" />
                     </ListItemButton>
                 </ListItem>
             </List>
