@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { ThemeProvider, CssBaseline, Box } from "@mui/material";
-import { lightTheme, darkTheme} from "../theme";
+import {lightTheme, darkTheme, lightMediumContrastTheme, darkHighContrastTheme} from "../theme";
 import Sidebar from "../components/dashboard/Sidebar";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
     const [themeName, setThemeName] = useState("light");
 
     useEffect(() => {
-        const savedTheme = localStorage.getItem("theme") || "light";
+        const savedTheme = localStorage.getItem("theme") || "dark";
         setThemeName(savedTheme);
     }, []);
 
@@ -17,6 +17,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         switch (themeName) {
             case "dark":
                 return darkTheme;
+            case "lightContrast":
+                return lightMediumContrastTheme;
+            case "darkContrast":
+                return darkHighContrastTheme;
             default:
                 return lightTheme;
         }
