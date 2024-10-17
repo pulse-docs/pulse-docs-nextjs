@@ -17,15 +17,11 @@ import {
     useTheme,
 } from "@mui/material";
 import DashboardIcon from "@mui/icons-material/Dashboard";
-import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
-import CreditCardIcon from "@mui/icons-material/CreditCard";
-import ReceiptIcon from "@mui/icons-material/Receipt";
-import SettingsIcon from "@mui/icons-material/Settings";
 import LogoutIcon from "@mui/icons-material/Logout";
 import {LogoutLink} from "@kinde-oss/kinde-auth-nextjs/components";
 import {useEffect} from "react";
 import SideBarUser from "@/app/components/dashboard/SideBarUser";
-import {FileUpload, Psychology, Visibility} from "@mui/icons-material";
+import {Folder, Psychology, Visibility} from "@mui/icons-material";
 
 const drawerWidth = 280;
 
@@ -109,11 +105,11 @@ const Sidebar = ({ onThemeChange, currentTheme }: {
                 </ListItem>
 
                 <ListItem disablePadding>
-                    <ListItemButton component="a" href="/dashboard/transactions">
+                    <ListItemButton component="a" href="/dashboard/case">
                         <ListItemIcon>
-                            <FileUpload />
+                            <Folder />
                         </ListItemIcon>
-                        <ListItemText primary="Upload" />
+                        <ListItemText primary="Cases" />
                     </ListItemButton>
                 </ListItem>
             </List>

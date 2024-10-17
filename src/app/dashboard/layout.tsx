@@ -6,7 +6,7 @@ import {lightTheme, darkTheme, lightMediumContrastTheme, darkHighContrastTheme} 
 import Sidebar from "../components/dashboard/Sidebar";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-    const [themeName, setThemeName] = useState("light");
+    const [themeName, setThemeName] = useState(localStorage.getItem("theme") || "dark");
 
     useEffect(() => {
         const savedTheme = localStorage.getItem("theme") || "dark";

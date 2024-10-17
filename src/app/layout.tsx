@@ -94,8 +94,8 @@ import Button from "@mui/material/Button";
 import AppBarComponent from "@/app/components/AppBar";
 
 export const metadata = {
-    title: "Kinde Auth",
-    description: "Kinde with NextJS App Router",
+    title: "PulseDocs",
+    description: "PulseDocs is a document processing application",
 };
 
 export default async function RootLayout({
