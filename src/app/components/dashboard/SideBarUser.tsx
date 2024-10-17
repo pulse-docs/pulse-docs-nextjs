@@ -29,21 +29,24 @@ export default function SideBarUser(){
     const [user, setUser] = useState<User |null>(null);
     const hasFetched = useRef(false)
     useEffect(() => {
-        if (!hasFetched.current) {
-            hasFetched.current = true;
-
-            fetch("/api/user")
-                .then((res) => res.json())
-                .then((data) => {
-                    setUser(data.user);
-                    console.log(data);
-                })
-                .catch((err) => {
-                    console.error(err);
-                });
-
-
+        if (localStorage.getItem("user") !== null) {
+            setUser(JSON.parse(localStorage.getItem("user")!));
+        } else {
+            if (!hasFetched.current) {
+                hasFetched.current = true;
+                fetch("/api/user")
+                    .then((res) => res.json())
+                    .then((data) => {
+                        setUser(data.user);
+                        localStorage.setItem("user", JSON.stringify(data.user));
+                        console.log(data);
+                    })
+                    .catch((err) => {
+                        console.error(err);
+                    });
+            }
         }
+
     }, []);
 
     return (
