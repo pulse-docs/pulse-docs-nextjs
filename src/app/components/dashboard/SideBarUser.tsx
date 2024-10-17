@@ -13,6 +13,17 @@ type User = {
     id: string;
 };
 
+type Organization = {
+    orgCode: string;
+    orgName: string;
+}
+
+
+type UserResponse = {
+    user: User;
+
+}
+
 
 export default function SideBarUser(){
     const [user, setUser] = useState<User |null>(null);
@@ -21,7 +32,7 @@ export default function SideBarUser(){
             .then((res) => res.json())
             .then((data) => {
                 setUser(data.user);
-                console.log(data.user);
+                console.log(data);
             });
     }, []);
 
@@ -29,16 +40,16 @@ export default function SideBarUser(){
         <Box sx={{ display: "flex", alignItems: "center", width: "100%" }}>
             <Avatar
                 src={user?.picture} // Replace with actual user avatar
-                alt="User Avatar"
+                alt={user?.given_name}
                 sx={{ width: 48, height: 48, marginRight: 2 }}
             />
             <Box>
                 <Typography variant="h6" sx={{ fontWeight: "bold" }}>
                     {user?.given_name + " " + user?.family_name}
                 </Typography>
-                {/*<Typography variant="body2" color="text.secondary">*/}
-                {/*    {user?.email}*/}
-                {/*</Typography>*/}
+                <Typography variant="body2" color="text.secondary">
+                    {user?.email}
+                </Typography>
             </Box>
             <IconButton sx={{ marginLeft: "auto" }}>
                 <SettingsIcon />
