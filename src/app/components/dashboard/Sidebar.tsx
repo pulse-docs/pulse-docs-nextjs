@@ -24,6 +24,7 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import LogoutIcon from "@mui/icons-material/Logout";
 import {LogoutLink} from "@kinde-oss/kinde-auth-nextjs/components";
 import {useEffect} from "react";
+import SideBarUser from "@/app/components/dashboard/SideBarUser";
 
 const drawerWidth = 280;
 
@@ -32,7 +33,6 @@ const Sidebar = ({ onThemeChange, currentTheme }: {
     currentTheme: string;
 }) => {
     const theme = useTheme(); // Access the current theme
-
     useEffect(() => {
         // Load the current theme from local storage
         const savedTheme = localStorage.getItem("theme") || "dark";
@@ -55,24 +55,7 @@ const Sidebar = ({ onThemeChange, currentTheme }: {
         >
             {/* User Profile Section */}
             <Toolbar sx={{ padding: 2 }}>
-                <Box sx={{ display: "flex", alignItems: "center", width: "100%" }}>
-                    <Avatar
-                        src="/profile-pic.jpg" // Replace with actual user avatar
-                        alt="User Avatar"
-                        sx={{ width: 48, height: 48, marginRight: 2 }}
-                    />
-                    <Box>
-                        <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-                            Kevin Dukkon
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            hey@kevdu.co
-                        </Typography>
-                    </Box>
-                    <IconButton sx={{ marginLeft: "auto" }}>
-                        <SettingsIcon />
-                    </IconButton>
-                </Box>
+                <SideBarUser />
             </Toolbar>
 
             <Divider />
@@ -154,7 +137,8 @@ const Sidebar = ({ onThemeChange, currentTheme }: {
                 >
                     <MenuItem value="light">Light</MenuItem>
                     <MenuItem value="dark">Dark</MenuItem>
-                    <MenuItem value="custom">Custom</MenuItem>
+                    <MenuItem value="darkContrast">Dark Contrast</MenuItem>
+                    <MenuItem value="lightContrast">Light Contrast</MenuItem>
                 </Select>
             </Box>
 
