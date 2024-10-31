@@ -1,4 +1,4 @@
-// /src/app/dashboard/create-case/form.tsx
+// /src/app/dashboard/create-cases/form.tsx
 "use client";
 
 import { useState } from 'react';
@@ -34,7 +34,7 @@ export default function CaseForm() {
                 body: JSON.stringify({ created_by: formData.created_by }),
             });
 
-            if (!res.ok) throw new Error('Failed to create case.');
+            if (!res.ok) throw new Error('Failed to create cases.');
 
             router.push('/dashboard/case'); // Redirect to dashboard on success
         } catch (err: any) {

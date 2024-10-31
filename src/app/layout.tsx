@@ -31,13 +31,13 @@
 //     //
 //     // const getTheme = () => {
 //     //     switch (themeName) {
-//     //         case "light":
+//     //         cases "light":
 //     //             return lightTheme;
-//     //         case "dark":
+//     //         cases "dark":
 //     //             return darkTheme;
-//     //         case "light-medium-contrast":
+//     //         cases "light-medium-contrast":
 //     //             return lightMediumContrastTheme;
-//     //         case "dark-high-contrast":
+//     //         cases "dark-high-contrast":
 //     //             return darkHighContrastTheme;
 //     //         default:
 //     //             return lightTheme;
