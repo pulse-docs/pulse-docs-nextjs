@@ -1,6 +1,6 @@
 
 import { Container, Typography } from '@mui/material';
-import CaseForm from "../../../components/dashboard/CaseCreate";
+import CaseForm from "../../../components/dashboard/CaseForm";
 
 export default function CreateCasePage() {
     return (
