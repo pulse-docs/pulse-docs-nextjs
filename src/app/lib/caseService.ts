@@ -20,7 +20,6 @@ export async function getCases() {
 export async function createCase(caseData: any) {
     unstable_noStore();
     try {
-        console.log(caseData);
         const db = await connect();
         const col = db.collection("cases");
         const newCase = { ...caseData, createdAt: Date.now()};
@@ -33,7 +32,16 @@ export async function createCase(caseData: any) {
 }
 
 export async function updateCase(caseData: any) {
-    cases = cases.map((c) => (c.id === caseData.id ? caseData : c));
+    console.log('case update ',caseData);
+    unstable_noStore();
+    try {
+        const db = await connect();
+        const col = db.collection("cases");
+        await col.updateOne({"_id": new ObjectId(caseData.id)}, {$set: caseData});
+    } catch (err) {
+        console.error('Failed to update case:', err);
+        throw new Error('Failed to update case.');
+    }
     return caseData;
 }
 
