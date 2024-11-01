@@ -32,6 +32,16 @@ export default function CasesPage() {
         setSelectedCase(null);
     };
 
+    const handleFieldChange = async (id: string, field: string, value: string) => {
+        await fetch(`/api/cases`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: id, [field]: value }),
+        });
+        await fetchCases();
+    };
+
+
     const handleDelete = async (id: string) => {
         await fetch(`/api/cases?id=${id}`, { method: 'DELETE' });
         await fetchCases();
@@ -40,6 +50,11 @@ export default function CasesPage() {
     const handleCreateCase = () => {
         router.push('/dashboard/cases/create');
     };
+
+    const handleEditCase = (id: string) => {
+        console.log(id)
+        router.push(`/dashboard/cases/edit/${id}`)
+    }
 
     return (
         <Container maxWidth="lg" sx={{ mt: 4 }}>
@@ -51,7 +66,7 @@ export default function CasesPage() {
                     Create Case
                 </Button>
             </Box>
-            <CaseList cases={cases} onEdit={setSelectedCase} onDelete={handleDelete} />
+            <CaseList cases={cases} onEdit={handleEditCase} onDelete={handleDelete}  onFieldChange={handleFieldChange}/>
         </Container>
     );
 }

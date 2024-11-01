@@ -105,7 +105,7 @@ const Sidebar = ({ onThemeChange, currentTheme }: {
                 </ListItem>
 
                 <ListItem disablePadding>
-                    <ListItemButton component="a" href="/dashboard/case">
+                    <ListItemButton component="a" href="/dashboard/cases">
                         <ListItemIcon>
                             <Folder />
                         </ListItemIcon>
