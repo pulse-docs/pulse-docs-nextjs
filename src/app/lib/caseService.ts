@@ -9,11 +9,23 @@ export async function getCases() {
         const db = await connect();
         const col = db.collection("cases");
         const cases = col.find({}).toArray();
-        console.log(cases);
         return cases;
     } catch (err) {
         console.error('Failed to fetch cases:', err);
         throw new Error('Failed to fetch cases.');
+    }
+}
+
+export async function getCase(id: string) {
+    unstable_noStore();
+    try {
+        const db = await connect();
+        const col = db.collection("cases");
+        const cases = await col.findOne({"_id": new ObjectId(id)});
+        return cases;
+    } catch (err) {
+        console.error('Failed to fetch case:', err);
+        throw new Error('Failed to fetch case.');
     }
 }
 
@@ -33,6 +45,7 @@ export async function createCase(caseData: any) {
 
 export async function updateCase(caseData: any) {
     console.log('case update ',caseData);
+    delete caseData._id;
     unstable_noStore();
     try {
         const db = await connect();
