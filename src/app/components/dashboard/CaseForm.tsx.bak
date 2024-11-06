@@ -1,0 +1,255 @@
+// src/app/components/dashboard/CaseForm.tsx
+"use client";
+import { useState, useEffect } from 'react';
+import { Box, Button, MenuItem, Select, InputLabel, FormControl, Typography, Paper, TextField } from '@mui/material';
+import { DataGrid, GridColDef, GridToolbarContainer, GridRowModesModel, GridRowModes, GridEventListener, GridRowId, GridRowModel, GridRowEditStopReasons } from '@mui/x-data-grid';
+import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import dayjs from "dayjs";
+import AddIcon from '@mui/icons-material/Add';
+import { useRouter } from 'next/navigation';
+
+const initialCaseState = {
+    state: 'DRAFT',
+    history: '',
+    recordsReviewed: [],
+    questions: [],
+    dueDate: dayjs().valueOf(),
+    priority: 'standard'
+};
+
+const initialTypes = ['Type1', 'Type2', 'Type3'];
+
+async function fetchCaseData(id: string) {
+    const response = await fetch(`/api/cases?id=${id}`);
+    if (!response.ok) {
+        throw new Error('Failed to fetch case data');
+    }
+    return (await response.json()).body;
+}
+
+function EditToolbar({ setRows, setRowModesModel }) {
+    const handleClick = () => {
+        const id = Date.now();
+        setRows((oldRows) => [
+            ...oldRows,
+            { id, date: '', type: '', description: '' }
+        ]);
+        setRowModesModel((oldModel) => ({
+            ...oldModel,
+            [id]: { mode: GridRowModes.Edit, fieldToFocus: 'date' }
+        }));
+    };
+
+    return (
+        <GridToolbarContainer>
+            <Button color="primary" startIcon={<AddIcon />} onClick={handleClick}>
+                Add record
+            </Button>
+        </GridToolbarContainer>
+    );
+}
+
+export default function CaseForm({ onSubmit, id }: { onSubmit?: Function, id?: string }) {
+    const [caseData, setCaseData] = useState(initialCaseState);
+    const [types, setTypes] = useState(initialTypes);
+    const [rowModesModel, setRowModesModel] = useState<GridRowModesModel>({});
+    const router = useRouter();
+
+    useEffect(() => {
+        if (id) {
+            fetchCaseData(id).then((data) => setCaseData(data));
+        }
+    }, [id]);
+
+    function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
+        const { name, value } = e.target;
+        setCaseData({ ...caseData, [name]: value });
+    }
+
+    function handleDateChange(index: number, value: any) {
+        const updatedRecords = [...caseData.recordsReviewed];
+        updatedRecords[index] = { ...updatedRecords[index], date: value?.valueOf() ?? '' };
+        setCaseData({ ...caseData, recordsReviewed: updatedRecords });
+    }
+
+    function addRecord() {
+        setCaseData({ ...caseData, recordsReviewed: [...caseData.recordsReviewed, { id: Date.now(), date: '', type: '', description: '' }] });
+    }
+
+    function deleteRecord(index: number) {
+        const updatedRecords = caseData.recordsReviewed.filter((_, i) => i !== index);
+        setCaseData({ ...caseData, recordsReviewed: updatedRecords });
+    }
+
+    function addQuestion() {
+        setCaseData({ ...caseData, questions: [...caseData.questions, { id: Date.now(), question: '' }] });
+    }
+
+    function deleteQuestion(index: number) {
+        const updatedQuestions = caseData.questions.filter((_, i) => i !== index);
+        setCaseData({ ...caseData, questions: updatedQuestions });
+    }
+
+    async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+        e.preventDefault();
+        if (caseData.history && caseData.recordsReviewed.length > 0 && caseData.questions.length > 0) {
+            if (onSubmit) {
+                await onSubmit(caseData);
+            }
+            router.push('/cases');
+        }
+    }
+
+    const handleRowEditStop: GridEventListener<'rowEditStop'> = (params, event) => {
+        if (params.reason === GridRowEditStopReasons.rowFocusOut) {
+            setRowModesModel((prev) => ({
+                ...prev,
+                [params.id]: { mode: GridRowModes.View }
+            }));
+        }
+    };
+
+    const handleEditClick = (id: GridRowId) => () => {
+        setRowModesModel({ ...rowModesModel, [id]: { mode: GridRowModes.Edit } });
+    };
+
+    const handleDeleteClick = (id: GridRowId) => () => {
+        setCaseData({ ...caseData, questions: caseData.questions.filter((row) => row.id !== id) });
+    };
+
+    const processRowUpdate = (newRow: GridRowModel) => {
+        const updatedRow = { ...newRow, isNew: false };
+        setCaseData({ ...caseData, questions: caseData.questions.map((row) => (row.id === newRow.id ? updatedRow : row)) });
+        return updatedRow;
+    };
+
+    const handleRowModesModelChange = (newRowModesModel: GridRowModesModel) => {
+        setRowModesModel(newRowModesModel);
+    };
+
+    const recordColumns: GridColDef[] = [
+        { field: 'date', headerName: 'Date', flex: 1, editable: true, renderCell: (params) => (
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker
+                        value={dayjs(params.value)}
+                        onChange={(value) => handleDateChange(params.id, value)}
+                    />
+                </LocalizationProvider>
+            )},
+        { field: 'type', headerName: 'Type', flex: 1, editable: true },
+        { field: 'description', headerName: 'Description', flex: 2, editable: true },
+        { field: 'actions', headerName: 'Actions', flex: 0.5, renderCell: (params) => (
+                <>
+                    <Button onClick={handleEditClick(params.id)}>Edit</Button>
+                    <Button onClick={handleDeleteClick(params.id)}>Delete</Button>
+                </>
+            )}
+    ];
+
+    const questionColumns: GridColDef[] = [
+        { field: 'question', headerName: 'Question', flex: 2, editable: true },
+        { field: 'actions', headerName: 'Actions', flex: 0.5, renderCell: (params) => (
+                <>
+                    <Button onClick={handleEditClick(params.id)}>Edit</Button>
+                    <Button onClick={handleDeleteClick(params.id)}>Delete</Button>
+                </>
+            )}
+    ];
+
+    return (
+        <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%', mx: 'auto' }}>
+            <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                <FormControl fullWidth>
+                    <InputLabel>State</InputLabel>
+                    <Select
+                        name="state"
+                        value={caseData.state}
+                        onChange={handleChange}
+                    >
+                        <MenuItem value="DRAFT">DRAFT</MenuItem>
+                        <MenuItem value="SUBMITTED">SUBMITTED</MenuItem>
+                    </Select>
+                </FormControl>
+                <FormControl fullWidth>
+                    <InputLabel>Priority</InputLabel>
+                    <Select
+                        name="priority"
+                        value={caseData.priority}
+                        onChange={handleChange}
+                    >
+                        <MenuItem value="standard">STANDARD</MenuItem>
+                        <MenuItem value="rush">RUSH</MenuItem>
+                        <MenuItem value="express">EXPRESS</MenuItem>
+                    </Select>
+                </FormControl>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DateTimePicker
+                        label="Due Date"
+                        value={dayjs(caseData.dueDate)}
+                        onChange={(value) => setCaseData({ ...caseData, dueDate: value?.valueOf() ?? '' })}
+                    />
+                </LocalizationProvider>
+            </Box>
+            <Box sx={{ mb: 2 }}>
+                <Typography variant="h6">History</Typography>
+                <TextField
+                    label="History"
+                    name="history"
+                    value={caseData.history}
+                    onChange={handleChange}
+                    fullWidth
+                    multiline
+                    rows={4}
+                    sx={{ mb: 2 }}
+                />
+            </Box>
+            <Box sx={{ mb: 2 }}>
+                <Typography variant="h6">Records Reviewed</Typography>
+                <Paper style={{ height: 300, width: '100%' }}>
+                    <DataGrid
+                        rows={caseData.recordsReviewed}
+                        columns={recordColumns}
+                        editMode="row"
+                        rowModesModel={rowModesModel}
+                        onRowModesModelChange={handleRowModesModelChange}
+                        onRowEditStop={handleRowEditStop}
+                        processRowUpdate={processRowUpdate}
+                        getRowId={(row) => row.id}
+                        slots={{
+                            toolbar: EditToolbar,
+                        }}
+                        slotProps={{
+                            toolbar: { setRows: (newRows) => setCaseData({ ...caseData, recordsReviewed: newRows }), setRowModesModel },
+                        }}
+                    />
+                </Paper>
+            </Box>
+            <Box sx={{ mb: 2 }}>
+                <Typography variant="h6">Questions</Typography>
+                <Paper style={{ height: 300, width: '100%' }}>
+                    <DataGrid
+                        rows={caseData.questions}
+                        columns={questionColumns}
+                        editMode="row"
+                        rowModesModel={rowModesModel}
+                        onRowModesModelChange={handleRowModesModelChange}
+                        onRowEditStop={handleRowEditStop}
+                        processRowUpdate={processRowUpdate}
+                        getRowId={(row) => row.id}
+                        slots={{
+                            toolbar: EditToolbar,
+                        }}
+                        slotProps={{
+                            toolbar: { setRows: (newRows) => setCaseData({ ...caseData, questions: newRows }), setRowModesModel },
+                        }}
+                    />
+                </Paper>
+            </Box>
+            <Button type="submit" variant="contained" color="primary">
+                {id ? 'Update Case' : 'Create Case'}
+            </Button>
+        </Box>
+    );
+}

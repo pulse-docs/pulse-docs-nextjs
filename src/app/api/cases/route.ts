@@ -1,12 +1,21 @@
 // src/pages/api/cases/index.ts
 import { NextRequest } from "next/server";
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getCases, createCase, updateCase, deleteCase } from '../../lib/caseService';
+import { getCases, getCase, createCase, updateCase, deleteCase } from '../../lib/caseService';
 import {NextResponse} from "next/server";
 import {getKindeServerSession} from "@kinde-oss/kinde-auth-nextjs/server";
 
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+    // Get Single
+    const searchParams = req.nextUrl.searchParams;
+    if (searchParams.get('id')) {
+        const cases = await getCase(searchParams.get('id') as string);
+        console.log("API CASEs: ", cases);
+        return NextResponse.json({ status: 200, body: cases });
+    }
+
+    // Get All
     const cases = await getCases();
     return NextResponse.json({ status: 200, body: cases });
 }
@@ -17,6 +26,8 @@ export async function POST(req: NextRequest) {
     if (!(await isAuthenticated())) {
         return new Response("Unauthorized", { status: 401 });
     }
+
+
     const newCase = await createCase(await req.json());
     return NextResponse.json({ status: 201, body: newCase });
 }
