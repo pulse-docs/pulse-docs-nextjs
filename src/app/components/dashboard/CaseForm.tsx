@@ -1,7 +1,21 @@
 // src/app/components/dashboard/CaseForm.tsx
 "use client";
 import { useState, useEffect } from 'react';
-import { Box, Button, MenuItem, Select, InputLabel, FormControl, Typography,  TextField, Card, CardContent, CardActions, IconButton } from '@mui/material';
+import {
+    Box,
+    Button,
+    MenuItem,
+    Select,
+    InputLabel,
+    FormControl,
+    Typography,
+    TextField,
+    Card,
+    CardContent,
+    CardActions,
+    IconButton,
+    DialogTitle, DialogContent, Dialog, DialogActions
+} from '@mui/material';
 import  Grid  from '@mui/material/Grid2';
 import AddIcon from '@mui/icons-material/Add';
 import dayjs from 'dayjs';
@@ -9,9 +23,11 @@ import { DatePicker, DateTimePicker, LocalizationProvider } from '@mui/x-date-pi
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { useRouter } from 'next/navigation';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { v4 as uuidv4 } from 'uuid';
 
 // Initial case state
 const initialCaseState = {
+    guid: uuidv4().toString(),
     state: 'DRAFT',
     history: '',
     recordsReviewed: [],
@@ -34,6 +50,9 @@ async function fetchCaseData(id: string) {
 // Main CaseForm component
 export default function CaseForm({ onSubmit, id }: { onSubmit?: Function, id?: string }) {
     const [caseData, setCaseData] = useState(initialCaseState);
+    const [open, setOpen] = useState(false);
+    const [selectedFiles, setSelectedFiles] = useState(null);
+    const [uploadStatus, setUploadStatus] = useState(null);
     const router = useRouter();
 
     useEffect(() => {
@@ -89,22 +108,84 @@ export default function CaseForm({ onSubmit, id }: { onSubmit?: Function, id?: s
         setCaseData({ ...caseData, recordsReviewed: updatedRecords });
     };
 
+    const handleEditQuestion = (id, updatedQuestion) => {
+        //console.log('handleEdit', id, updatedRecord);
+        const updatedQuestions = caseData.questions.map(
+            question => question.id === id ? updatedQuestion : question
+        );
+        setCaseData({ ...caseData, questions: updatedQuestions})
+    }
+
+    const handleEditResponse = (id, updatedQuestion) => {
+        //console.log('handleEdit', id, updatedRecord);
+        const updatedQuestions = caseData.questions.map(
+            question => question.id === id ? updatedQuestion : question
+        );
+        setCaseData({ ...caseData, questions: updatedQuestions });
+    }
+
     const handleDelete = (id) => {
         console.log('handleDelete', id);
         const updatedRecords = caseData.recordsReviewed.filter(record => record.id !== id);
         setCaseData({ ...caseData, recordsReviewed: updatedRecords });
     };
 
+    const handleDeleteQuestion = (id) => {
+        console.log('handleDelete', id);
+        const updatedQuestions = caseData.questions.filter(question => question.id !== id);
+        setCaseData({ ...caseData, questions: updatedQuestions });
+    }
+
     async function handleSubmit(e) {
         e.preventDefault();
         const resp = await handleCreateOrUpdate(caseData);
         router.push('/dashboard/cases');
     }
+    // Open the modal
+    const handleClickOpen = () => {
+        console.log('handleClickOpen');
+        setOpen(true);
+    };
+
+    // Close the modal
+    const handleClose = () => {
+        setOpen(false);
+        setUploadStatus(null); // Reset upload status on close
+    };
+
+    const handleFileChange = (e) => {
+        setSelectedFiles(e.target.files);
+    };
+
+    const handleUpload = async () => {
+        const formData = new FormData();
+        Array.from(selectedFiles).forEach((file) => {formData.append('files', file)});
+
+        try {
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+            });
+
+            const result = await response.json();
+            setUploadStatus(result.success ? 'Upload successful' : `Error: ${result.error}`);
+            handleClose();
+        } catch (error) {
+            setUploadStatus(`Upload failed: ${error.message}`);
+        }
+    };
 
     return (
         <Box component="form" onSubmit={handleSubmit}>
             {/* Metadata Fields */}
-            <MetadataSection caseData={caseData} handleChange={handleChange} />
+            <MetadataSection caseData={caseData} handleChange={handleChange} handleClickOpen={handleClickOpen} open={open}/>
+            <DialogModal open={open}
+                             handleClose={handleClose}
+                             handleFileChange={handleFileChange}
+                            uploadStatus={uploadStatus}
+                            handleUpload={handleUpload}
+                            selectedFiles={selectedFiles}
+                         maxWidth="sm" fullWidth />
 
             {/* Records Section */}
             <CardGrid
@@ -122,17 +203,21 @@ export default function CaseForm({ onSubmit, id }: { onSubmit?: Function, id?: s
                 items={caseData.questions}
                 onAddItem={addQuestion}
                 renderItem={(question) => (
-                    <QuestionCard question={question} onEdit={() => {}} onDelete={() => {}} />
+                    <QuestionCard question={question} onEdit={handleEditQuestion} onDelete={handleDeleteQuestion} />
                 )}
             />
 
-            <Button type="submit" variant="contained" onSubmit={handleCreateOrUpdate}>Submit Case</Button>
+            {id ?
+                <Button type="submit" variant="contained" onSubmit={handleCreateOrUpdate}>Update Case</Button>
+                :
+                <Button type="submit" variant="contained" onSubmit={handleCreateOrUpdate}>Submit Case</Button>
+            }
         </Box>
     );
 }
 
 // Metadata Section Component
-function MetadataSection({ caseData, handleChange }) {
+function MetadataSection({ caseData, handleChange, handleClickOpen}) {
     return (
         <Grid container spacing={2} mb={2}>
             <Grid  size={{sm:12, md:4}}>
@@ -164,8 +249,42 @@ function MetadataSection({ caseData, handleChange }) {
                     />
                 </LocalizationProvider>
             </Grid>
+            <Grid size={{sm:12, md:4}}>
+                <Button
+                    variant="contained"
+                    fullWidth
+                    onClick={handleClickOpen}
+                >Upload</Button>
+            </Grid>
         </Grid>
     );
+}
+
+function DialogModal({open, handleClose, handleFileChange, uploadStatus, handleUpload, selectedFiles}) {
+    return (
+        <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+            <DialogTitle>Upload Documents</DialogTitle>
+            <DialogContent>
+                <Typography>Select files to upload:</Typography>
+                <input type="file" multiple onChange={handleFileChange} />
+                {uploadStatus && <Typography>{uploadStatus}</Typography>}
+            </DialogContent>
+            <DialogActions>
+                <Button onClick={handleClose} color="secondary">
+                    Cancel
+                </Button>
+                <Button
+                    onClick={handleUpload}
+                    variant="contained"
+                    color="primary"
+                    disabled={!selectedFiles}
+                >
+                    Upload
+                </Button>
+            </DialogActions>
+        </Dialog>
+    );
+
 }
 // CardGrid Component
 function CardGrid({ title, items, renderItem, onAddItem }) {
@@ -233,20 +352,44 @@ function RecordCard({ record, onDateChange, onTypeChange, onEdit, onDelete }) {
     );
 }
 // QuestionCard Component
-function QuestionCard({ question, onEdit, onDelete }) {
+function QuestionCard({ question, onEdit, onDelete, onApprove, onAI }) {
     return (
         <Card>
             <CardContent>
-                <Typography>Question: {question.question}</Typography>
+                <TextField
+                    fullWidth
+                    label="Question"
+                    value={question.question}
+                    onChange={(e) => onEdit(question.id, { ...question, question: e.target.value })}
+                    multiline
+                    rows={2}
+                />
+                <TextField
+                    fullWidth
+                    label="Response"
+                    value={question.response}
+                    onChange={(e) => onEdit(question.id, { ...question, response: e.target.value })}
+                    multiline
+                    rows={1}
+                    sx={{ mt: 2 }}
+                />
             </CardContent>
-            <CardActions>
-                <Button onClick={() => onEdit(question)}>Edit</Button>
-                <Button onClick={() => onDelete(question)}>Delete</Button>
+            <CardActions sx={{ justifyContent: 'space-between' }}>
+                <IconButton onClick={() => onDelete(question.id)}>
+                    <DeleteIcon />
+                </IconButton>
+                <Box>
+                    <Button onClick={() => onApprove(question.id)} variant="contained" color="primary" sx={{ mr: 1 }}>
+                        Approve
+                    </Button>
+                    <Button onClick={() => onAI(question.id)} variant="contained" color="secondary">
+                        AI
+                    </Button>
+                </Box>
             </CardActions>
         </Card>
     );
 }
-
 // ReferenceTag Component
 function ReferenceTag({ onReference }) {
     return (
