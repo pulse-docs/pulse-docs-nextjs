@@ -8,6 +8,7 @@ import {
     Select,
     InputLabel,
     FormControl,
+    List, ListItem, ListItemIcon, ListItemText,
     Typography,
     TextField,
     Card,
@@ -16,6 +17,7 @@ import {
     IconButton,
     DialogTitle, DialogContent, Dialog, DialogActions
 } from '@mui/material';
+import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import  Grid  from '@mui/material/Grid2';
 import AddIcon from '@mui/icons-material/Add';
 import dayjs from 'dayjs';
@@ -53,12 +55,45 @@ export default function CaseForm({ onSubmit, id }: { onSubmit?: Function, id?: s
     const [open, setOpen] = useState(false);
     const [selectedFiles, setSelectedFiles] = useState(null);
     const [uploadStatus, setUploadStatus] = useState(null);
+    const [files, setFiles] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
     const router = useRouter();
 
     useEffect(() => {
         if (id) fetchCaseData(id).then((data) => {setCaseData({...data, id: data._id})});
     }, [id]);
 
+    useEffect(() => {
+        if (!caseData.guid) {
+            setError('GUID is required');
+            setLoading(false);
+            return;
+        }
+        fetchFiles();
+    }, [caseData.guid]);
+
+    const fetchFiles = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+
+            const response = await fetch(`/api/upload?guid=${caseData.guid}`);
+            if (!response.ok) {
+                throw new Error(`Error fetching files: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            setFiles(data.files || []);
+            console.log("files", data.files);
+        } catch (err) {
+            console.error('Error fetching files:', err);
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
     const handleCreateOrUpdate = async (caseData: any) => {
         const response = await fetch('/api/cases', {
             method: caseData._id ? 'PUT' : 'POST',
@@ -160,6 +195,7 @@ export default function CaseForm({ onSubmit, id }: { onSubmit?: Function, id?: s
     const handleUpload = async () => {
         const formData = new FormData();
         Array.from(selectedFiles).forEach((file) => {formData.append('files', file)});
+        formData.append('guid', caseData.guid);
 
         try {
             const response = await fetch('/api/upload', {
@@ -170,6 +206,7 @@ export default function CaseForm({ onSubmit, id }: { onSubmit?: Function, id?: s
             const result = await response.json();
             setUploadStatus(result.success ? 'Upload successful' : `Error: ${result.error}`);
             handleClose();
+            fetchFiles();
         } catch (error) {
             setUploadStatus(`Upload failed: ${error.message}`);
         }
@@ -186,7 +223,7 @@ export default function CaseForm({ onSubmit, id }: { onSubmit?: Function, id?: s
                             handleUpload={handleUpload}
                             selectedFiles={selectedFiles}
                          maxWidth="sm" fullWidth />
-
+            { files?.length ? <FileList files={files} />: null}
             {/* Records Section */}
             <CardGrid
                 title="Records Reviewed"
@@ -214,6 +251,28 @@ export default function CaseForm({ onSubmit, id }: { onSubmit?: Function, id?: s
             }
         </Box>
     );
+}
+
+function FileList({files}){
+    return (
+        <Grid mb={2}>
+            <Typography variant="h6">Files</Typography>
+            <List>
+                {files.map((file) => (
+                    <ListItem key={file.key}>
+                        <ListItemIcon>
+                            <InsertDriveFileIcon />
+                        </ListItemIcon>
+                        <ListItemText primary={file.key} />
+                        <IconButton edge="end" onClick={() => onDelete(file.key)}>
+                            <DeleteIcon />
+                        </IconButton>
+                    </ListItem>
+                ))}
+            </List>
+        </Grid>
+    );
+
 }
 
 // Metadata Section Component
