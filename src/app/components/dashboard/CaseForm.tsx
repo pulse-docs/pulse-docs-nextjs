@@ -212,6 +212,20 @@ export default function CaseForm({ onSubmit, id }: { onSubmit?: Function, id?: s
         }
     };
 
+    const handleDeleteFile = async (key) => {
+        try {
+            const response = await fetch(`/api/upload?key=${key}`, {
+                method: 'DELETE',
+            });
+
+            const result = await response.json();
+            setUploadStatus(result.success ? 'File deleted' : `Error: ${result.error}`);
+            fetchFiles();
+        } catch (error) {
+            setUploadStatus(`Delete failed: ${error.message}`);
+        }
+    }
+
     return (
         <Box component="form" onSubmit={handleSubmit}>
             {/* Metadata Fields */}
@@ -223,7 +237,7 @@ export default function CaseForm({ onSubmit, id }: { onSubmit?: Function, id?: s
                             handleUpload={handleUpload}
                             selectedFiles={selectedFiles}
                          maxWidth="sm" fullWidth />
-            { files?.length ? <FileList files={files} />: null}
+            { files?.length ? <FileList files={files} onDeleteFile={handleDeleteFile}/>: null}
             {/* Records Section */}
             <CardGrid
                 title="Records Reviewed"
@@ -253,7 +267,7 @@ export default function CaseForm({ onSubmit, id }: { onSubmit?: Function, id?: s
     );
 }
 
-function FileList({files}){
+function FileList({files, onDeleteFile}) {
     return (
         <Grid mb={2}>
             <Typography variant="h6">Files</Typography>
@@ -263,8 +277,8 @@ function FileList({files}){
                         <ListItemIcon>
                             <InsertDriveFileIcon />
                         </ListItemIcon>
-                        <ListItemText primary={file.key} />
-                        <IconButton edge="end" onClick={() => onDelete(file.key)}>
+                        <ListItemText primary={file.name} />
+                        <IconButton edge="end" onClick={() => onDeleteFile(file.key)}>
                             <DeleteIcon />
                         </IconButton>
                     </ListItem>
