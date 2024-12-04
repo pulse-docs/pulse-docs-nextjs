@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
 
         // Extract the GUID from the fields
         console.log('Fields:', fields);
-        const guid = fields.guid as string;
+        const guid = fields.guid as unknown as string;
         if (!guid) {
             return NextResponse.json({ error: 'GUID is required in the form data' }, { status: 400 });
         }
