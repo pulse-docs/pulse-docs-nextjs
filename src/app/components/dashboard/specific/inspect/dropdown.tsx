@@ -3,6 +3,7 @@
 import React, { useEffect } from 'react';
 import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 import { useDebouncedCallback } from 'use-debounce';
+import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 
 export default function NumberDropdown() {
     const searchParams = useSearchParams();
@@ -19,7 +20,6 @@ export default function NumberDropdown() {
     }, [searchParams, pathName, replace]);
 
     const handleChange = useDebouncedCallback((value: string) => {
-        console.log("handleChange", value);
         if (value === undefined) {
             return;
         }
@@ -33,25 +33,24 @@ export default function NumberDropdown() {
         replace(`${pathName}?${params.toString()}`);
     }, 500);
 
-    const dropDownOptions = Array.from({ length: 48 }, (_, i) => i + 3).filter(value => value % 10 == 0);
+    const dropDownOptions = Array.from({ length: 48 }, (_, i) => i + 3).filter(value => value % 10 === 0);
 
     return (
-        <div className="relative flex flex-1 flex-shrink-0">
-            <label htmlFor="topK" className="sr-only">
-                Select Number
-            </label>
-            <select
+        <FormControl fullWidth variant="outlined">
+            <InputLabel id="topK-label">Select Number</InputLabel>
+            <Select
+                labelId="topK-label"
                 id="topK"
-                className="block w-full rounded-md border border-gray-200 py-2 pl-3 pr-10 text-base focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 defaultValue={searchParams.get('topK')?.toString() || '50'}
                 onChange={(e) => handleChange(e.target.value)}
+                label="Select Number"
             >
                 {dropDownOptions.map((value) => (
-                    <option key={value} value={value}>
+                    <MenuItem key={value} value={value}>
                         {value}
-                    </option>
+                    </MenuItem>
                 ))}
-            </select>
-        </div>
+            </Select>
+        </FormControl>
     );
 }

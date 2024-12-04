@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
 import { useDebouncedCallback } from 'use-debounce';
-import { Button } from '@/app/components/dashboard/common/button';
+import { Button } from '@mui/material';
 
 export default function TreatmentToggle() {
     const searchParams = useSearchParams();
@@ -24,14 +24,13 @@ export default function TreatmentToggle() {
         setTreatment(!showTreatment);
     };
 
-    // Determine button theme based on treatment state using Tailwind CSS classes
-    const buttonTheme = showTreatment ? 'bg-blue-500 text-white' : 'bg-gray-500 text-black';
-
     return (
         <div className="flex justify-center">
             <Button
                 onClick={toggleTreatment}
-                className={`w-full flex justify-center font-bold text-base sm:text-sm md:text-sm text-justify ${buttonTheme}`}
+                variant={showTreatment ? 'contained' : 'outlined'}
+                fullWidth
+                sx={{ height: '100%'}}
             >
                 {showTreatment ? 'Treatment' : 'Treatment'}
             </Button>
@@ -59,14 +58,13 @@ export function FullSearchToggle() {
         setFullSearch(!showFullSearch);
     };
 
-    // Determine button theme based on treatment state using Tailwind CSS classes
-    const buttonTheme = showFullSearch ? 'bg-blue-500 text-white' : 'bg-gray-500 text-black';
-
     return (
         <div className="flex justify-center">
             <Button
                 onClick={toggleFullSearch}
-                className={`w-full flex justify-center font-bold text-base sm:text-sm md:text-sm text-justify ${buttonTheme}`}
+                variant={showFullSearch ? 'contained' : 'outlined'}
+                fullWidth
+                sx={{ height: '100%'}}
             >
                 {showFullSearch ? 'Full Search' : 'Full Search'}
             </Button>
