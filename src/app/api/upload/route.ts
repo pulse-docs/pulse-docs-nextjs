@@ -112,11 +112,34 @@ export async function GET(req: NextRequest) {
             key: file.Key,
             lastModified: file.LastModified,
             size: file.Size,
+            name: file.Key?.split('/').pop(),
         })) || [];
 
         return NextResponse.json({ files });
     } catch (error) {
         console.error('Error retrieving files:', error);
         return NextResponse.json({ error: 'Error retrieving files' }, { status: 500 });
+    }
+}
+
+// DELETE: Delete single file given the file key
+export async function DELETE(req: NextRequest) {
+    try {
+        const { searchParams } = new URL(req.url || '', 'http://localhost');
+        const key = searchParams.get('key');
+        if (!key) {
+            return NextResponse.json({ error: 'Key is required as a query parameter' }, { status: 400 });
+        }
+
+        const deleteParams = {
+            Bucket: process.env.S3_BUCKET_NAME as string,
+            Key: key,
+        };
+
+        await s3.deleteObject(deleteParams).promise();
+        return NextResponse.json({ message: 'File deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting file:', error);
+        return NextResponse.json({ error: 'Error deleting file' }, { status: 500 });
     }
 }
