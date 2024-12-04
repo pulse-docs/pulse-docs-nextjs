@@ -1,7 +1,7 @@
 'use client';
 import {useState} from 'react';
 import {copyToClipboard} from "@/app/utils/data.clipboard";
-import {Button} from '@/app/components/common/button';
+import {Button} from '@/app/components/dashboard/common/button';
 import {Simulate} from "react-dom/test-utils";
 import select = Simulate.select;
 

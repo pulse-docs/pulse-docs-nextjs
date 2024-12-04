@@ -1,7 +1,7 @@
-import Breadcrumbs from '@/app/components/specific/invoices/breadcrumbs';
+import Breadcrumbs from '@/app/components/dashboard/specific/invoices/breadcrumbs';
 import { notFound } from 'next/navigation';
 import { fetchFileByIDs } from '@/app/utils/data.mongo';
-import { CardCase } from '@/app/components/specific/inspect/card-case';
+import { CardCase } from '@/app/components/dashboard/specific/inspect/card-case';
 import { Case } from '@/app/utils/definitions';
 
  
