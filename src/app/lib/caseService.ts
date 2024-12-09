@@ -8,7 +8,7 @@ export async function getCases() {
     try {
         const db = await connect();
         const col = db.collection("cases");
-        const cases = col.find({}).toArray();
+        const cases = col.find({}).sort({"dueDate": 1}).toArray();
         return cases;
     } catch (err) {
         console.error('Failed to fetch cases:', err);

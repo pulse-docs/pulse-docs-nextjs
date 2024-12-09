@@ -1,19 +1,21 @@
 import { Card, CardContent, Typography, Box, Button, TextField, MenuItem, Select, FormControl, InputLabel } from '@mui/material';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import { useDropzone } from 'react-dropzone';
 
-export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange }) {
-    const handleDateChange = (date) => {
+// @ts-ignore
+export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, onFileUpload }) {
+    const handleDateChange = (date: any) => {
         onFieldChange(caseData._id, 'dueDate', date);
     };
 
-    const handlePriorityChange = (event) => {
+    const handlePriorityChange = (event: { target: { value: any; }; }) => {
         const newPriority = event.target.value;
         onFieldChange(caseData._id, 'priority', newPriority);
         updateDueDate(newPriority);
     };
 
-    const updateDueDate = (priority) => {
+    const updateDueDate = (priority: any) => {
         const createdAtDate = new Date(caseData.createdAt);
         let dueDate;
 
@@ -34,8 +36,15 @@ export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange }) 
         onFieldChange(caseData._id, 'dueDate', dueDate);
     };
 
+    const onDrop = (acceptedFiles: any) => {
+        onFileUpload(caseData._id, acceptedFiles);
+    };
+
+    const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
+
     return (
-        <Card sx={{ mb: 2 }}>
+        <Card sx={{ mb: 2 }} {...getRootProps()} style={{ border: isDragActive ? '2px dashed #000' : '2px solid transparent' }}>
+            <input {...getInputProps()} />
             <CardContent>
                 <FormControl fullWidth variant="outlined" sx={{ mt: 2 }}>
                     <InputLabel>Priority</InputLabel>

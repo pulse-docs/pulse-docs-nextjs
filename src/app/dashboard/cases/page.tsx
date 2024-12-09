@@ -8,12 +8,23 @@ import CaseCard from '@/app/components/dashboard/CaseCard';
 
 export default function CasesPage() {
     const [cases, setCases] = useState([]);
+    const [users, setUsers] = useState([]);
     const [selectedCase, setSelectedCase] = useState(null);
     const router = useRouter();
 
     useEffect(() => {
         fetchCases();
     }, []);
+
+    useEffect(() => {
+        fetchUsers();
+    }, [])
+
+    const fetchUsers = async () => {
+        const response = await fetch('/api/users');
+        const data = await response.json();
+        setUsers(data.users);
+    };
 
     const fetchCases = async () => {
         const response = await fetch('/api/cases');
@@ -71,6 +82,7 @@ export default function CasesPage() {
                             onEdit={handleEditCase}
                             onDelete={handleDelete}
                             onFieldChange={handleFieldChange}
+                            onFileUpload={() => {}}
                         />
                     </Grid>
                 ))}
