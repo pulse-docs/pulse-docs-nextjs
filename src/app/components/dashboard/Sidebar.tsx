@@ -17,11 +17,12 @@ import {
     useTheme,
 } from "@mui/material";
 import DashboardIcon from "@mui/icons-material/Dashboard";
+import AccessibleForwardIcon from '@mui/icons-material/AccessibleForward';
 import LogoutIcon from "@mui/icons-material/Logout";
 import {LogoutLink} from "@kinde-oss/kinde-auth-nextjs/components";
 import {useEffect} from "react";
 import SideBarUser from "@/app/components/dashboard/SideBarUser";
-import {Folder, Psychology, Visibility} from "@mui/icons-material";
+import {AccessibleForward, Folder, Psychology, Visibility} from "@mui/icons-material";
 
 const drawerWidth = 280;
 
@@ -87,6 +88,14 @@ const Sidebar = ({ onThemeChange, currentTheme }: {
                     </ListItemButton>
                 </ListItem>
 
+                <ListItem disablePadding>
+                    <ListItemButton component="a" href="/dashboard/disability">
+                        <ListItemIcon>
+                            <AccessibleForwardIcon />
+                        </ListItemIcon>
+                        <ListItemText primary="Disability" />
+                    </ListItemButton>
+                </ListItem>
                 {/*<ListItem disablePadding>*/}
                 {/*    <ListItemButton component="a" href="/dashboard/cases">*/}
                 {/*        <ListItemIcon>*/}
