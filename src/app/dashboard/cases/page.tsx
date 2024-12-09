@@ -1,10 +1,10 @@
-// src/app/dashboard/cases/page.tsx
 "use client";
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Container, Typography, Box, Button } from '@mui/material';
-import CaseList from '../../components/dashboard/CaseList';
+import { Container, Typography, Box, Button} from '@mui/material';
+import Grid from '@mui/material/Grid2';
+import CaseCard from '@/app/components/dashboard/CaseCard';
 
 export default function CasesPage() {
     const [cases, setCases] = useState([]);
@@ -40,7 +40,6 @@ export default function CasesPage() {
         await fetchCases();
     };
 
-
     const handleDelete = async (id: string) => {
         await fetch(`/api/cases?id=${id}`, { method: 'DELETE' });
         await fetchCases();
@@ -51,12 +50,11 @@ export default function CasesPage() {
     };
 
     const handleEditCase = (id: string) => {
-        console.log(id)
-        router.push(`/dashboard/cases/edit/${id}`)
-    }
+        router.push(`/dashboard/cases/edit/${id}`);
+    };
 
     return (
-        <Container maxWidth="lg" sx={{ mt: 4 }}>
+        <Box sx={{ mt: 4, flexGrow: 1 }}>
             <Typography variant="h4" component="h1" gutterBottom>
                 Manage Cases
             </Typography>
@@ -65,7 +63,18 @@ export default function CasesPage() {
                     Create Case
                 </Button>
             </Box>
-            <CaseList cases={cases} onEdit={handleEditCase} onDelete={handleDelete}  onFieldChange={handleFieldChange}/>
-        </Container>
+            <Grid container spacing={4}>
+                {cases.map((caseData) => (
+                    <Grid size={{xs:12, sm:6, md:3 }} key={caseData.id}>
+                        <CaseCard
+                            caseData={caseData}
+                            onEdit={handleEditCase}
+                            onDelete={handleDelete}
+                            onFieldChange={handleFieldChange}
+                        />
+                    </Grid>
+                ))}
+            </Grid>
+        </Box>
     );
 }
