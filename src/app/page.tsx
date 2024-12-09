@@ -1,23 +1,16 @@
-import Link from "next/link";
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
-  return (
-    <div className="container">
-      {/*<div className="card hero">*/}
-      {/*  <p className="text-display-1 hero-title">*/}
-      {/*    Let’s start authenticating <br /> with KindeAuth*/}
-      {/*  </p>*/}
-      {/*  <p className="text-body-1 hero-tagline">Configure your app</p>*/}
+  const router = useRouter();
 
-      {/*  <Link*/}
-      {/*    href="https://kinde.com/docs/sdks/nextjs-sdk"*/}
-      {/*    target="_blank"*/}
-      {/*    rel="noreferrer"*/}
-      {/*    className="btn btn-light btn-big"*/}
-      {/*  >*/}
-      {/*    Go to docs*/}
-      {/*  </Link>*/}
-      {/*</div>*/}
-    </div>
-  );
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      router.push("/dashboard/inspect"); // Change this to your desired redirect URL
+    }
+  }, [router]);
+
+  return null; // Return null as the component will redirect immediately
 }

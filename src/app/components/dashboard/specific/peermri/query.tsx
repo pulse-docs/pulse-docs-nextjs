@@ -18,7 +18,7 @@ export default function Query({ placeholder, query, cb, handleSubmit }: QueryPro
         autoExpand(e.target);
     };
 
-    const autoExpand = (field: HTMLTextAreaElement) => {
+    const autoExpand = (field: EventTarget & HTMLInputElement) => {
         field.style.height = 'inherit';
         const computed = window.getComputedStyle(field);
         const height = parseInt(computed.getPropertyValue('border-top-width'), 10)

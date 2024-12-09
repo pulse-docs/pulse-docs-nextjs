@@ -38,14 +38,6 @@ export default async function RootLayout({
         </main>
         <footer className="footer">
             <div className="container">
-                {/*<strong className="text-heading-2">KindeAuth</strong>*/}
-                {/*<p className="footer-tagline text-body-3">*/}
-                {/*    Visit our{" "}*/}
-                {/*    <Link className="link" href="https://kinde.com/docs">*/}
-                {/*        help center*/}
-                {/*    </Link>*/}
-                {/*</p>*/}
-
                 <small className="text-subtle">
                     © 2024 Pulse Document Processing, LLC. All rights reserved
                 </small>

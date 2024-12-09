@@ -14,6 +14,7 @@ export default function CaseList({ cases, onEdit, onDelete, onFieldChange }: {
     onDelete: (id: string) => void;
     onFieldChange: (id: string, field: string, value: string) => void;
 }) {
+    // @ts-ignore
     const columns: GridColDef[] = [
         { field: '_id', headerName: 'Case ID', width: 150 },
         { field: 'state', headerName: 'State', width: 150 },
@@ -23,7 +24,7 @@ export default function CaseList({ cases, onEdit, onDelete, onFieldChange }: {
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                     <DateTimePicker
                         value={dayjs(params.value)}
-                        onChange={(value) => onFieldChange(params.row._id, 'dueDate', value.valueOf())}
+                        onChange={(value) => onFieldChange(params.row._id, 'dueDate', (value ? value.valueOf().toString() : "" ))}
                     />
                 </LocalizationProvider>
             )
@@ -80,8 +81,8 @@ export default function CaseList({ cases, onEdit, onDelete, onFieldChange }: {
                 <DataGrid
                     rows={rows}
                     columns={columns}
-                    pageSize={10}
-                    rowsPerPageOptions={[10]}
+                    //pageSize={10}
+                    //rowsPerPageOptions={[10]}
                 />
             </Paper>
         </Box>

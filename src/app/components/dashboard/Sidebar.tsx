@@ -57,34 +57,17 @@ const Sidebar = ({ onThemeChange, currentTheme }: {
 
             <Divider />
 
-            {/* Search Input */}
-            {/*<Box sx={{ padding: 2 }}>*/}
-            {/*    <TextField*/}
-            {/*        fullWidth*/}
-            {/*        placeholder="Search"*/}
-            {/*        variant="outlined"*/}
-            {/*        size="small"*/}
-            {/*        InputProps={{*/}
-            {/*            startAdornment: <SearchIcon sx={{ marginRight: 1 }} />,*/}
-            {/*        }}*/}
-            {/*        sx={{*/}
-            {/*            "& .MuiOutlinedInput-root": {*/}
-            {/*                backgroundColor: theme.palette.background.paper, // Theme-aware background*/}
-            {/*            },*/}
-            {/*        }}*/}
-            {/*    />*/}
-            {/*</Box>*/}
 
             {/* Navigation Links */}
             <List>
-                <ListItem disablePadding>
-                    <ListItemButton component="a" href="/dashboard">
-                        <ListItemIcon>
-                            <DashboardIcon />
-                        </ListItemIcon>
-                        <ListItemText primary="Dashboard" />
-                    </ListItemButton>
-                </ListItem>
+                {/*<ListItem disablePadding>*/}
+                {/*    <ListItemButton component="a" href="/dashboard">*/}
+                {/*        <ListItemIcon>*/}
+                {/*            <DashboardIcon />*/}
+                {/*        </ListItemIcon>*/}
+                {/*        <ListItemText primary="Dashboard" />*/}
+                {/*    </ListItemButton>*/}
+                {/*</ListItem>*/}
 
                 <ListItem disablePadding>
                     <ListItemButton component="a" href="/dashboard/inspect">
@@ -104,14 +87,14 @@ const Sidebar = ({ onThemeChange, currentTheme }: {
                     </ListItemButton>
                 </ListItem>
 
-                <ListItem disablePadding>
-                    <ListItemButton component="a" href="/dashboard/cases">
-                        <ListItemIcon>
-                            <Folder />
-                        </ListItemIcon>
-                        <ListItemText primary="Cases" />
-                    </ListItemButton>
-                </ListItem>
+                {/*<ListItem disablePadding>*/}
+                {/*    <ListItemButton component="a" href="/dashboard/cases">*/}
+                {/*        <ListItemIcon>*/}
+                {/*            <Folder />*/}
+                {/*        </ListItemIcon>*/}
+                {/*        <ListItemText primary="Cases" />*/}
+                {/*    </ListItemButton>*/}
+                {/*</ListItem>*/}
             </List>
 
             <Divider />

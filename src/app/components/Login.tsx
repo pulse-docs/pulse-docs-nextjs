@@ -1,9 +1,11 @@
 "use client";
 
-import {LoginLink, RegisterLink} from "@kinde-oss/kinde-auth-nextjs";
+import {LoginLink } from "@kinde-oss/kinde-auth-nextjs";
 import {Box, Paper, Typography, Button, Stack} from "@mui/material";
+import Link from "next/link";
 
 export default function Login() {
+    const requestAccessLink = process.env.NEXT_PUBLIC_KINDE_REQUEST_ACCESS_URL;
     return (
         <Box
             sx={{
@@ -36,12 +38,13 @@ export default function Login() {
                         Login
                     </Button>
                     <Button
-                        component={RegisterLink}
+                        component={Link}
+                        href={requestAccessLink}
                         variant="outlined"
                         color="primary"
                         fullWidth
                     >
-                        Register
+                        Request Access
                     </Button>
                 </Stack>
             </Paper>

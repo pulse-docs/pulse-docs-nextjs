@@ -4,7 +4,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Container, Typography, Box, Button } from '@mui/material';
-import CaseForm from '../../components/dashboard/CaseForm.tsx.bak';
 import CaseList from '../../components/dashboard/CaseList';
 
 export default function CasesPage() {

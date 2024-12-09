@@ -5,7 +5,8 @@ import fs from 'fs';
 import { Readable } from 'stream';
 import http from 'http';
 
-export const config = {
+
+const config = {
     api: {
         bodyParser: false, // Disable automatic body parsing to allow Formidable to handle it
     },
