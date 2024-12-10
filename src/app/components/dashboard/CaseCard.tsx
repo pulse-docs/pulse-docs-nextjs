@@ -4,7 +4,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import { useDropzone } from 'react-dropzone';
 
 // @ts-ignore
-export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, onFileUpload }) {
+export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, onFileUpload, users}) {
     const handleDateChange = (date: any) => {
         onFieldChange(caseData._id, 'dueDate', date);
     };

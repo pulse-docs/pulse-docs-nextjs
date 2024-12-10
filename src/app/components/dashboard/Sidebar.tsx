@@ -132,7 +132,7 @@ const Sidebar = ({ onThemeChange, currentTheme }: {
             </Box>
 
             {/* Logout Button */}
-            <Box sx={{ padding: 2, marginTop: "auto" }} component={LogoutLink}>
+            <Box sx={{ padding: 2, marginTop: "auto" }} component={LogoutLink} onClick={() => localStorage.clear()}>
                 <ListItemButton>
                     <ListItemIcon>
                         <LogoutIcon />

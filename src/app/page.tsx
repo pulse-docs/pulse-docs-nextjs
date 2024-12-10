@@ -5,9 +5,12 @@ import { useRouter } from "next/navigation";
 
 export default function Home() {
   const router = useRouter();
+  // Validate if the user is authenticated
+
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    const user = localStorage.getItem("user");
+    if (typeof window !== "undefined" && user) {
       router.push("/dashboard/inspect"); // Change this to your desired redirect URL
     }
   }, [router]);

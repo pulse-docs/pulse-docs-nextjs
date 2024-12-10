@@ -23,6 +23,7 @@ export default function CasesPage() {
     const fetchUsers = async () => {
         const response = await fetch('/api/users');
         const data = await response.json();
+        console.log(data)
         setUsers(data.users);
     };
 
@@ -79,6 +80,7 @@ export default function CasesPage() {
                     <Grid size={{xs:12, sm:6, md:3 }} key={caseData.id}>
                         <CaseCard
                             caseData={caseData}
+                            users={users}
                             onEdit={handleEditCase}
                             onDelete={handleDelete}
                             onFieldChange={handleFieldChange}
