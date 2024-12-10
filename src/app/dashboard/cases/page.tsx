@@ -21,10 +21,11 @@ export default function CasesPage() {
     }, [])
 
     const fetchUsers = async () => {
-        const response = await fetch('/api/users');
+        const organization = JSON.parse(localStorage.getItem('organization') || '{}');
+        const response = await fetch(`/api/users?orgCode=${organization?.orgCode}`);
         const data = await response.json();
         console.log(data)
-        setUsers(data.users);
+        setUsers(data);
     };
 
     const fetchCases = async () => {
@@ -65,6 +66,7 @@ export default function CasesPage() {
         router.push(`/dashboard/cases/edit/${id}`);
     };
 
+    // @ts-ignore
     return (
         <Box sx={{ mt: 4, flexGrow: 1 }}>
             <Typography variant="h4" component="h1" gutterBottom>
@@ -77,14 +79,13 @@ export default function CasesPage() {
             </Box>
             <Grid container spacing={4}>
                 {cases.map((caseData) => (
-                    <Grid size={{xs:12, sm:6, md:3 }} key={caseData.id}>
+                    <Grid size={{xs:12, sm:6, md:3 }} key={caseData._id}>
                         <CaseCard
                             caseData={caseData}
                             users={users}
                             onEdit={handleEditCase}
                             onDelete={handleDelete}
                             onFieldChange={handleFieldChange}
-                            onFileUpload={() => {}}
                         />
                     </Grid>
                 ))}

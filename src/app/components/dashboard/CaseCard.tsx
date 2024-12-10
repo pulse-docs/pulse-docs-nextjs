@@ -1,10 +1,9 @@
 import { Card, CardContent, Typography, Box, Button, TextField, MenuItem, Select, FormControl, InputLabel } from '@mui/material';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { useDropzone } from 'react-dropzone';
 
 // @ts-ignore
-export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, onFileUpload, users}) {
+export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, users }) {
     const handleDateChange = (date: any) => {
         onFieldChange(caseData._id, 'dueDate', date);
     };
@@ -36,15 +35,17 @@ export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, on
         onFieldChange(caseData._id, 'dueDate', dueDate);
     };
 
-    const onDrop = (acceptedFiles: any) => {
-        onFileUpload(caseData._id, acceptedFiles);
+    const handleAssigneeChange = (role: string, event: { target: { value: any; }; }) => {
+        const newAssignee = event.target.value;
+        onFieldChange(caseData._id, role, newAssignee);
     };
 
-    const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
+    const getUsersByRole = (role: string) => {
+        return users.filter((user: any) => user.roles.includes(role));
+    };
 
     return (
-        <Card sx={{ mb: 2 }} {...getRootProps()} style={{ border: isDragActive ? '2px dashed #000' : '2px solid transparent' }}>
-            <input {...getInputProps()} />
+        <Card sx={{ mb: 2 }}>
             <CardContent>
                 <FormControl fullWidth variant="outlined" sx={{ mt: 2 }}>
                     <InputLabel>Priority</InputLabel>
@@ -71,8 +72,46 @@ export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, on
                     />
                 </Box>
 
-                <Typography variant="body2" sx={{ mt: 2 }}>Assignee: {caseData.assignee}</Typography>
-                <Typography variant="body2">Records: {caseData.recordsReviewed?.length}</Typography>
+                <FormControl fullWidth variant="outlined" sx={{ mt: 2 }}>
+                    <InputLabel>Analyst</InputLabel>
+                    <Select
+                        value={caseData.analyst || ''}
+                        onChange={(event) => handleAssigneeChange('analyst', event)}
+                        label="Analyst"
+                    >
+                        {getUsersByRole('analyst').map((user: any) => (
+                            <MenuItem key={user.id} value={user.id}>{user.full_name}</MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+
+                <FormControl fullWidth variant="outlined" sx={{ mt: 2 }}>
+                    <InputLabel>Reviewer</InputLabel>
+                    <Select
+                        value={caseData.reviewer || ''}
+                        onChange={(event) => handleAssigneeChange('reviewer', event)}
+                        label="Reviewer"
+                    >
+                        {getUsersByRole('reviewer').map((user: any) => (
+                            <MenuItem key={user.id} value={user.id}>{user.full_name}</MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+
+                <FormControl fullWidth variant="outlined" sx={{ mt: 2 }}>
+                    <InputLabel>Approver</InputLabel>
+                    <Select
+                        value={caseData.approver || ''}
+                        onChange={(event) => handleAssigneeChange('approver', event)}
+                        label="Approver"
+                    >
+                        {getUsersByRole('approver').map((user: any) => (
+                            <MenuItem key={user.id} value={user.id}>{user.full_name}</MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+
+                <Typography variant="body2" sx={{ mt: 2 }}>Records: {caseData.recordsReviewed?.length}</Typography>
                 <Typography variant="body2">Questions: {caseData.questions?.length}</Typography>
                 <Box sx={{ mt: 2 }}>
                     <Button variant="contained" color="primary" onClick={() => onEdit(caseData._id)}>

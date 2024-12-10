@@ -1,5 +1,5 @@
 import { getKindeServerSession} from "@kinde-oss/kinde-auth-nextjs/server";
-import { NextResponse } from "next/server";
+import {NextRequest, NextResponse} from "next/server";
 
 
 const fetchAccessToken = async () => {
@@ -28,31 +28,32 @@ const fetchAccessToken = async () => {
         const data = await response.json();
         return data.access_token;
     } catch (error) {
-        console.error('Error fetching access token:', error.message);
+        console.error('Error fetching access token:', error);
         throw new Error('Failed to fetch access token');
     }
 };
 
-export async function GET() {
+export async function GET(req: NextRequest) {
     const token = await fetchAccessToken()
     const domain = process.env.KINDE_ISSUER_URL || ""; // Your Kinde domain
-
-    const response = await fetch(`${domain}/api/v1/users`, {
+    // Get the orgCode from URL Params
+    const searchParams = req.nextUrl.searchParams;
+    if (!searchParams.has('orgCode')) {
+        return NextResponse.json({ status: 400, body: { message: 'orgCode is required' } });
+    }
+    const orgCode = searchParams.get('orgCode') as string;
+    const response = await fetch(`${domain}/api/v1/organizations/${orgCode}/users`, {
         headers: {
             Authorization: `Bearer ${token}`,
         }})
 
-    // const data = await response.json();
-    // data.users.map((user: any) => {
-    //
-    // }
-    // const responseRoles = await fetch(`${domain}/api/v1/organization/org_ec8cd634f18f/user_roles`, {
-    //     headers: {
-    //         Authorization: `Bearer ${token}`,
-    //     }})
-    //
-    // console.log(await responseRoles.json())
-    return NextResponse.json(await response.json());
+    if (!response.ok) {
+        return NextResponse.json({ status: 500, body: { message: 'Failed to fetch users' } });
+    }
+    const users = await response.json();
+    console.log(users)
+    return NextResponse.json(users.organization_users);
+
 }
 
 
