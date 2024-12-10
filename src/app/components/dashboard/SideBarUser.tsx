@@ -36,7 +36,7 @@ type UserResponse = {
 export default function SideBarUser() {
     const [user, setUser] = useState<User | null>(null);
     const [organization, setOrganization] = useState<Organization | null>(null);
-    const [roles, setRoles] = useState<Roles>(null);
+    const [roles, setRoles] = useState<Roles | null>(null);
     const hasFetched = useRef(false);
 
     useEffect(() => {
