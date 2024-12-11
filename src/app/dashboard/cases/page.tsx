@@ -2,9 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Container, Typography, Box, Button} from '@mui/material';
+import { Typography, Box, Button} from '@mui/material';
 import Grid from '@mui/material/Grid2';
 import CaseCard from '@/app/components/dashboard/CaseCard';
+
+// CaseData struct
+
 
 export default function CasesPage() {
     const [cases, setCases] = useState([]);
@@ -24,7 +27,6 @@ export default function CasesPage() {
         const organization = JSON.parse(localStorage.getItem('organization') || '{}');
         const response = await fetch(`/api/users?orgCode=${organization?.orgCode}`);
         const data = await response.json();
-        console.log(data)
         setUsers(data);
     };
 
@@ -63,6 +65,7 @@ export default function CasesPage() {
     };
 
     const handleEditCase = (id: string) => {
+        console.log('Edit case:', id);
         router.push(`/dashboard/cases/edit/${id}`);
     };
 

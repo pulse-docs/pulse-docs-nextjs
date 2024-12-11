@@ -22,10 +22,6 @@ import {
     DialogContent,
     Dialog,
     DialogActions,
-    FilledTextFieldProps,
-    OutlinedTextFieldProps,
-    StandardTextFieldProps,
-    TextFieldVariants
 } from '@mui/material';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import Grid from '@mui/material/Grid2';
@@ -97,6 +93,7 @@ export default function CaseForm({onSubmit, id}: { onSubmit?: Function, id?: str
     const [files, setFiles] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [thumbnailURLs, setThumbnailURLs] = useState([]);
 
     const router = useRouter();
 
@@ -113,6 +110,17 @@ export default function CaseForm({onSubmit, id}: { onSubmit?: Function, id?: str
             return;
         }
         fetchFiles();
+    }, [caseData.guid]);
+
+    useEffect(() => {
+        if (!caseData.guid) {
+            setError(null);
+            setLoading(false);
+            return;
+        }
+        fetchThumbnailURLs(caseData.guid).then((data) => {
+            setThumbnailURLs(data.imageUrls);
+        });
     }, [caseData.guid]);
 
     const fetchFiles = async () => {
@@ -135,6 +143,15 @@ export default function CaseForm({onSubmit, id}: { onSubmit?: Function, id?: str
             setLoading(false);
         }
     };
+
+    const fetchThumbnailURLs = async (guid: string) => {
+        const response = await fetch(`/api/pages?guid=${guid}`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch thumbnail URLs');
+        }
+        return (await response.json());
+    }
+
     const handleCreateOrUpdate = async (caseData: any) => {
         const response = await fetch('/api/cases', {
             method: caseData._id ? 'PUT' : 'POST',
@@ -289,6 +306,7 @@ export default function CaseForm({onSubmit, id}: { onSubmit?: Function, id?: str
                          selectedFiles={selectedFiles}
             />
             {files?.length ? <FileList files={files} onDeleteFile={handleDeleteFile}/> : null}
+            {thumbnailURLs?.length ? ImageGrid(thumbnailURLs) : null}
             {/* Records Section */}
             <CardGrid
                 title="Records Reviewed"
@@ -317,6 +335,19 @@ export default function CaseForm({onSubmit, id}: { onSubmit?: Function, id?: str
                 <Button type="submit" variant="contained" onSubmit={handleCreateOrUpdate}>Submit Case</Button>
             }
         </Box>
+    );
+}
+
+function ImageGrid(thumbnailURLs: string[]) {
+    console.log('thumbnailURLs', thumbnailURLs);
+    return (
+        <Grid container spacing={2}>
+            {thumbnailURLs.map((url: string) => (
+                <Grid size={{xs:12, sm:6, md:4}}>
+                    <img src={url} style={{width: '100%'}}  alt=""/>
+                </Grid>
+            ))}
+        </Grid>
     );
 }
 
