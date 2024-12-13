@@ -16,7 +16,6 @@ export async function GET(req: NextRequest) {
     }
 
     const caseGuid = searchParams.get('guid');
-    console.log("guid: ", caseGuid);
 
     const prefix = `uploads/${caseGuid}/thumbnails/`;
 
@@ -28,7 +27,6 @@ export async function GET(req: NextRequest) {
         if (!data.Contents) {
             return NextResponse.json({ status: 404, body: { message: 'No images found' } });
         }
-        console.log(data)
         const imageUrls = data.Contents.map((item) =>
             s3.getSignedUrl('getObject', {
                 Bucket: bucketName,
@@ -36,7 +34,6 @@ export async function GET(req: NextRequest) {
                 Expires: 3600, // URLs expire in 1 hour
             })
         );
-        console.log('Image URLs:', imageUrls);
         return NextResponse.json({ imageUrls });
     } catch (error) {
         console.error('Error fetching images:', error);

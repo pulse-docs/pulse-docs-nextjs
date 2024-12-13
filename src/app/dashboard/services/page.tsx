@@ -3,95 +3,17 @@
 import React, { useState } from 'react';
 import { DndContext, closestCenter } from '@dnd-kit/core';
 import { SortableContext } from '@dnd-kit/sortable';
-import { useDroppable } from '@dnd-kit/core';
-import { useDraggable } from '@dnd-kit/core';
-import { Box, Card, CardContent, Typography, Button, Grid, TextField, FormControl, InputLabel, Select, MenuItem, IconButton } from '@mui/material';
-import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import DeleteIcon from '@mui/icons-material/Delete';
-import dayjs from 'dayjs';
-
-function Droppable(props: { id: string, children: React.ReactNode, info: any, handleInfoChange: (id: string, field: string, value: any) => void, onDelete: () => void }) {
-    const { isOver, setNodeRef } = useDroppable({
-        id: props.id,
-    });
-    const style = {
-        border: '2px dashed gray',
-        padding: '16px',
-        backgroundColor: isOver ? 'lightgreen' : 'white',
-        minHeight: '100px',
-        position: 'relative',
-    };
-
-    return (
-        <Box ref={setNodeRef} sx={style}>
-            <IconButton
-                onClick={props.onDelete}
-                sx={{ position: 'absolute', top: 8, right: 8 }}
-            >
-                <DeleteIcon />
-            </IconButton>
-            <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <DatePicker
-                    label="Date"
-                    value={dayjs(props.info.date)}
-                    onChange={(newValue) => props.handleInfoChange(props.id, 'date', newValue?.valueOf())}
-                    renderInput={(params) => <TextField {...params} fullWidth />}
-                />
-            </LocalizationProvider>
-            <FormControl fullWidth sx={{ mt: 2 }}>
-                <InputLabel>Type</InputLabel>
-                <Select
-                    value={props.info.type}
-                    onChange={(e) => props.handleInfoChange(props.id, 'type', e.target.value)}
-                >
-                    <MenuItem value="Type1">Type1</MenuItem>
-                    <MenuItem value="Type2">Type2</MenuItem>
-                    <MenuItem value="Type3">Type3</MenuItem>
-                </Select>
-            </FormControl>
-            <TextField
-                fullWidth
-                label="Summary"
-                value={props.info.summary}
-                onChange={(e) => props.handleInfoChange(props.id, 'summary', e.target.value)}
-                multiline
-                rows={2}
-                sx={{ mt: 2 }}
-            />
-            {props.children}
-        </Box>
-    );
-}
-
-function Draggable(props: { id: string, children: React.ReactNode, index: number }) {
-    const { attributes, listeners, setNodeRef, transform } = useDraggable({
-        id: props.id,
-    });
-    const style = transform ? {
-        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-    } : undefined;
-
-    return (
-        <Card ref={setNodeRef} sx={style} {...listeners} {...attributes}>
-            <CardContent>
-                <Typography variant="body2">Page {props.index + 1}</Typography>
-                {props.children}
-            </CardContent>
-        </Card>
-    );
-}
+import { Box, Button, Grid2 as Grid, TextField, Typography } from '@mui/material';
+import Droppable from '@/app/components/dashboard/services/droppable';
+import Draggable from '@/app/components/dashboard/services/draggable';
+import { createService, updateService, deleteService } from '@/app/lib/servicesCallbacks';
 
 export default function DnDPage() {
     const [availableItems, setAvailableItems] = useState<string[]>([]);
-    const [droppedItems, setDroppedItems] = useState<{ [key: string]: string[] }>({
-        droppable1: [],
-    });
-    const [droppableAreas, setDroppableAreas] = useState(['droppable1']);
+    const [droppedItems, setDroppedItems] = useState<{ [key: string]: string[] }>({});
+    const [droppableAreas, setDroppableAreas] = useState<string[]>([]);
     const [guid, setGuid] = useState('');
-    const [droppableInfo, setDroppableInfo] = useState<{ [key: string]: { date: number | null, type: string, summary: string } }>({
-        droppable1: { date: null, type: '', summary: '' },
-    });
+    const [droppableInfo, setDroppableInfo] = useState<{ [key: string]: { date: number | null, type: string, summary: string } }>({});
 
     function logDrop(itemId: string, droppableId: string) {
         console.log(`Item ${itemId} dropped into ${droppableId}`);
@@ -101,7 +23,7 @@ export default function DnDPage() {
         console.log(`Item ${itemId} removed from ${droppableId}`);
     }
 
-    function handleDragEnd(event: any) {
+    async function handleDragEnd(event: any) {
         const { active, over } = event;
         if (over) {
             if (active.id !== over.id) {
@@ -118,6 +40,7 @@ export default function DnDPage() {
                     return newDroppedItems;
                 });
                 setAvailableItems((prev) => prev.filter((item) => item !== active.id));
+                // await addRecordToCase(guid, over.id, active.id);
             }
         } else {
             setAvailableItems((prev) => {
@@ -136,17 +59,19 @@ export default function DnDPage() {
                 }
                 return prev;
             });
+            // await removeRecordFromCase(guid, active.id);
         }
     }
 
-    function handleAddDroppable() {
+    async function handleAddDroppable() {
         const newId = `droppable${droppableAreas.length + 1}`;
         setDroppableAreas([...droppableAreas, newId]);
         setDroppedItems((prev) => ({ ...prev, [newId]: [] }));
         setDroppableInfo((prev) => ({ ...prev, [newId]: { date: null, type: '', summary: '' } }));
+        await createService({ guid: newId, date: null, type: '', summary: '' });
     }
 
-    function handleDeleteDroppable(id: string) {
+    async function handleDeleteDroppable(id: string) {
         setDroppedItems((prev) => {
             const newDroppedItems = { ...prev };
             const itemsToReAdd = newDroppedItems[id];
@@ -160,6 +85,7 @@ export default function DnDPage() {
             delete newDroppableInfo[id];
             return newDroppableInfo;
         });
+        await deleteService(id);
     }
 
     function handleInfoChange(id: string, field: string, value: any) {
@@ -170,6 +96,7 @@ export default function DnDPage() {
                 [field]: value,
             },
         }));
+        updateService({ guid: id, [field]: value });
     }
 
     async function fetchThumbnailURLs(guid: string) {
@@ -208,7 +135,7 @@ export default function DnDPage() {
                     <Typography variant="h6">Medical Services</Typography>
                     <Grid container spacing={2}>
                         {droppableAreas.map((id) => (
-                            <Grid item xs={12} sm={6} md={4} key={id}>
+                            <Grid size={{xs:12, sm:6, md:4}} key={id}>
                                 <SortableContext items={droppedItems[id]}>
                                     <Droppable id={id} info={droppableInfo[id]} handleInfoChange={handleInfoChange} onDelete={() => handleDeleteDroppable(id)}>
                                         {droppedItems[id].map((itemId, index) => (
@@ -220,16 +147,16 @@ export default function DnDPage() {
                                 </SortableContext>
                             </Grid>
                         ))}
-                        <Grid item xs={12}>
+                        <Grid size={{xs:12}}>
                             <Button variant="contained" onClick={handleAddDroppable}>Add Medical Service</Button>
                         </Grid>
                     </Grid>
                 </Box>
                 <Box>
-                    <Typography variant="h6">Draggable Items</Typography>
+                    <Typography variant="h6">Draggable Items - {availableItems?.length}</Typography>
                     <Grid container spacing={2}>
                         {availableItems.map((item, index) => (
-                            <Grid item xs={12} sm={6} md={4} key={item}>
+                            <Grid size={{xs:12, sm:6,  md:4}} key={item}>
                                 <Draggable id={item} index={index}>
                                     <img src={item} alt={item} style={{ width: '100%' }} />
                                 </Draggable>
