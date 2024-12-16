@@ -51,7 +51,7 @@ export async function updateService(serviceData: any) {
     try {
         const db = await connect();
         const col = db.collection(collection);
-        await col.updateOne({"_id": new ObjectId(serviceData.id)}, {$set: serviceData});
+        await col.updateOne({"guid": serviceData.guid}, {$set: serviceData});
     } catch (err) {
         console.error('Failed to update service:', err);
         throw new Error('Failed to update service.');

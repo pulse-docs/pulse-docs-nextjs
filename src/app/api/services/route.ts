@@ -31,3 +31,15 @@ export async function POST(req: NextRequest) {
     const newService = await createService(await req.json());
     return NextResponse.json({ status: 201, body: newService });
 }
+
+export async function PUT(req: NextRequest) {
+    const updatedService = await updateService(await req.json());
+    return NextResponse.json({ status: 200, body: updatedService });
+}
+
+
+export async function DELETE(req: NextRequest) {
+    const searchParams = req.nextUrl.searchParams;
+    await deleteService(searchParams.get('guid') as string);
+    return NextResponse.json({ status: 204 });
+}

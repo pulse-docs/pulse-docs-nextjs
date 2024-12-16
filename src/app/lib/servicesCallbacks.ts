@@ -19,6 +19,7 @@ export async function createService(serviceData: any) {
 }
 
 export async function updateService(serviceData: any) {
+    console.log(serviceData);
     try {
         const response = await fetch(`/api/services?guid=${serviceData.guid}`, {
             method: 'PUT',
