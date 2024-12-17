@@ -47,6 +47,7 @@ export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, us
     return (
         <Card sx={{ mb: 2 }}>
             <CardContent>
+                <Typography variant="h6">{caseData.guid}</Typography>
                 <FormControl fullWidth variant="outlined" sx={{ mt: 2 }}>
                     <InputLabel>Priority</InputLabel>
                     <Select

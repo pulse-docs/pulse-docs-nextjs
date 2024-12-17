@@ -27,12 +27,16 @@ export async function GET(req: NextRequest) {
         if (!data.Contents) {
             return NextResponse.json({ status: 404, body: { message: 'No images found' } });
         }
-        const imageUrls = data.Contents.map((item) =>
-            s3.getSignedUrl('getObject', {
-                Bucket: bucketName,
-                Key: item.Key,
-                Expires: 3600, // URLs expire in 1 hour
-            })
+        const imageUrls = data.Contents.map((item) =>   {
+            return {
+                bucket: bucketName,
+                key: item.Key,
+                url : s3.getSignedUrl('getObject', {
+                    Bucket: bucketName,
+                    Key: item.Key,
+                    Expires: 3600, // URLs expire in 1 hour
+                })
+            }}
         );
         return NextResponse.json({ imageUrls });
     } catch (error) {

@@ -10,8 +10,8 @@ import { createService, updateService, deleteService } from '@/app/lib/servicesC
 import { v4 as uuidv4 } from 'uuid';
 
 export default function DnDPage() {
-    const [availableItems, setAvailableItems] = useState<string[]>([]);
-    const [droppedItems, setDroppedItems] = useState<{ [key: string]: string[] }>({});
+    const [availableItems, setAvailableItems] = useState<{ bucket: string, key: string, url: string }[]>([]);
+    const [droppedItems, setDroppedItems] = useState<{ [key: string]: { bucket: string, key: string }[] }>({});
     const [droppableAreas, setDroppableAreas] = useState<string[]>([]);
     const [caseGuid, setCaseGuid] = useState('');
     const [droppableInfo, setDroppableInfo] = useState<{ [key: string]: { date: number | null, type: string, summary: string } }>({});
@@ -19,7 +19,7 @@ export default function DnDPage() {
 
     useEffect(() => {
         if (caseGuid) {
-            fetchMedicalServices(caseGuid);
+            fetchMedicalServicesAndThumbnails(caseGuid).then().catch(err => console.error(err));
         }
     }, [caseGuid]);
 
@@ -38,36 +38,38 @@ export default function DnDPage() {
                 setDroppedItems((prev) => {
                     const newDroppedItems = { ...prev };
                     for (const key in newDroppedItems) {
-                        if (newDroppedItems[key].includes(active.id)) {
+                        if (newDroppedItems[key].some(item => item.key === active.id)) {
                             logRemove(active.id, key);
                         }
-                        newDroppedItems[key] = newDroppedItems[key].filter((item) => item !== active.id);
+                        newDroppedItems[key] = newDroppedItems[key].filter((item) => item.key !== active.id);
                     }
-                    newDroppedItems[over.id] = [...(newDroppedItems[over.id] || []), active.id];
-                    logDrop(active.id, over.id);
+                    const droppedItem = availableItems.find(item => item.key === active.id);
+                    if (droppedItem) {
+                        newDroppedItems[over.id] = [...(newDroppedItems[over.id] || []), { bucket: droppedItem.bucket, key: droppedItem.key }];
+                        logDrop(active.id, over.id);
+                        updateService({ guid: over.id, items: newDroppedItems[over.id] });
+                    }
                     return newDroppedItems;
                 });
-                setAvailableItems((prev) => prev.filter((item) => item !== active.id));
-                // await addRecordToCase(guid, over.id, active.id);
+                setAvailableItems((prev) => prev.filter((item) => item.key !== active.id));
             }
         } else {
             setAvailableItems((prev) => {
                 setDroppedItems((prevDropped) => {
                     const newDroppedItems = { ...prevDropped };
                     for (const key in newDroppedItems) {
-                        if (newDroppedItems[key].includes(active.id)) {
+                        if (newDroppedItems[key].some(item => item.key === active.id)) {
                             logRemove(active.id, key);
                         }
-                        newDroppedItems[key] = newDroppedItems[key].filter((item) => item !== active.id);
+                        newDroppedItems[key] = newDroppedItems[key].filter((item) => item.key !== active.id);
                     }
                     return newDroppedItems;
                 });
-                if (!prev.includes(active.id)) {
-                    return [...prev, active.id];
+                if (!prev.some((item) => item.key === active.id)) {
+                    return [...prev, { bucket: '', key: active.id, url: '' }];
                 }
                 return prev;
             });
-            // await removeRecordFromCase(guid, active.id);
         }
     }
 
@@ -84,7 +86,7 @@ export default function DnDPage() {
             const newDroppedItems = { ...prev };
             const itemsToReAdd = newDroppedItems[id];
             delete newDroppedItems[id];
-            setAvailableItems((prevAvailable) => [...prevAvailable, ...itemsToReAdd]);
+            setAvailableItems((prevAvailable) => [...prevAvailable, ...itemsToReAdd.map((item) => ({ bucket: item.bucket, key: item.key, url: '' }))]);
             return newDroppedItems;
         });
         setDroppableAreas((prev) => prev.filter((area) => area !== id));
@@ -117,26 +119,24 @@ export default function DnDPage() {
         return data.imageUrls;
     }
 
-    async function handleFetchThumbnails() {
-        try {
-            const urls = await fetchThumbnailURLs(caseGuid);
-            setAvailableItems(urls);
-        } catch (error) {
-            console.error('Error fetching thumbnails:', error);
+    async function fetchMedicalServices(caseGuid: string) {
+        const response = await fetch(`/api/services?caseGuid=${caseGuid}`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch medical services');
         }
+        const data = await response.json();
+        return data.body;
     }
 
-    async function fetchMedicalServices(caseGuid: string) {
+    async function fetchMedicalServicesAndThumbnails(caseGuid: string) {
         try {
-            const response = await fetch(`/api/services?caseGuid=${caseGuid}`);
-            if (!response.ok) {
-                throw new Error('Failed to fetch medical services');
-            }
-            const data = await response.json();
-            console.log(data)
-            const services = data.body;
+            const [services, thumbnails] = await Promise.all([
+                fetchMedicalServices(caseGuid),
+                fetchThumbnailURLs(caseGuid),
+            ]);
+
             const newDroppableAreas = services?.map((service: any) => service.guid);
-            const newDroppedItems: { [key: string]: string[] } = {};
+            const newDroppedItems: { [key: string]: { bucket: string, key: string }[] } = {};
             const newDroppableInfo: { [key: string]: { date: number | null, type: string, summary: string } } = {};
 
             services.forEach((service: any) => {
@@ -151,8 +151,17 @@ export default function DnDPage() {
             setDroppableAreas(newDroppableAreas);
             setDroppedItems(newDroppedItems);
             setDroppableInfo(newDroppableInfo);
+
+            const availableItemsSet = new Set(thumbnails.map((item: any) => JSON.stringify(item)));
+            services.forEach((service: any) => {
+                service?.items?.forEach((item: { bucket: string, key: string }) => {
+                    availableItemsSet.delete(JSON.stringify(item));
+                });
+            });
+
+            setAvailableItems(Array.from(availableItemsSet).map((item: any) => JSON.parse(item)));
         } catch (error) {
-            console.error('Error fetching medical services:', error);
+            console.error('Error fetching medical services and thumbnails:', error);
         }
     }
 
@@ -166,20 +175,20 @@ export default function DnDPage() {
                         onChange={(e) => setCaseGuid(e.target.value)}
                         fullWidth
                     />
-                    <Button variant="contained" onClick={handleFetchThumbnails} sx={{ mt: 2 }}>
-                        Fetch Thumbnails
-                    </Button>
+                    {/*<Button variant="contained" onClick={() => fetchMedicalServicesAndThumbnails(caseGuid)} sx={{ mt: 2 }}>*/}
+                    {/*    Fetch Thumbnails*/}
+                    {/*</Button>*/}
                 </Box>
                 <Box>
                     <Typography variant="h6">Medical Services</Typography>
                     <Grid container spacing={2}>
                         {droppableAreas.map((id) => (
                             <Grid size={{ xs: 12, sm: 6, md: 4 }} key={id}>
-                                <SortableContext items={droppedItems[id]}>
+                                <SortableContext items={droppedItems[id].map(obj => obj.key)}>
                                     <Droppable id={id} info={droppableInfo[id]} handleInfoChange={handleInfoChange} onDelete={() => handleDeleteDroppable(id)}>
-                                        {droppedItems[id]?.map((itemId, index) => (
-                                            <Draggable key={itemId} id={itemId} index={index}>
-                                                <img src={itemId} alt={itemId} style={{ width: '50px', height: '50px' }} />
+                                        {droppedItems[id]?.map((item, index) => (
+                                            <Draggable key={item.key} id={item.key} index={index}>
+                                                <img src={availableItems.find(availItem => availItem.bucket === item.bucket && availItem.key === item.key)?.url || ''} alt={item.key} style={{ width: '50px', height: '50px' }} />
                                             </Draggable>
                                         ))}
                                     </Droppable>
@@ -197,9 +206,9 @@ export default function DnDPage() {
                     <Typography variant="h6">Draggable Items - {availableItems?.length}</Typography>
                     <Grid container spacing={2}>
                         {availableItems.map((item, index) => (
-                            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={item}>
-                                <Draggable id={item} index={index}>
-                                    <img src={item} alt={item} style={{ width: '100%' }} />
+                            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={item.key}>
+                                <Draggable id={item.key} index={index}>
+                                    <img src={item.url} alt={item.key} style={{ width: '100%' }} />
                                 </Draggable>
                             </Grid>
                         ))}
