@@ -9,8 +9,8 @@ import {getKindeServerSession} from "@kinde-oss/kinde-auth-nextjs/server";
 export async function GET(req: NextRequest) {
     // Get Single
     const searchParams = req.nextUrl.searchParams;
-    if (searchParams.get('id')) {
-        const cases = await getCase(searchParams.get('id') as string);
+    if (searchParams.get('guid')) {
+        const cases = await getCase(searchParams.get('guid') as string);
         console.log("API CASEs: ", cases);
         return NextResponse.json({ status: 200, body: cases });
     }

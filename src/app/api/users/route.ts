@@ -51,7 +51,6 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ status: 500, body: { message: 'Failed to fetch users' } });
     }
     const users = await response.json();
-    console.log(users)
     return NextResponse.json(users.organization_users);
 
 }

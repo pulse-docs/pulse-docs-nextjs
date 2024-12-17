@@ -1,9 +1,65 @@
-import { Card, CardContent, Typography, Box, Button, TextField, MenuItem, Select, FormControl, InputLabel } from '@mui/material';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
+import { useState } from 'react';
+import {
+    Card,
+    CardContent,
+    Typography,
+    Box,
+    Button,
+    FormControl,
+    Grid2 as Grid,
+    InputLabel,
+    Select,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    IconButton,
+    List,
+    ListItem,
+    ListItemIcon,
+    ListItemText,
+    MenuItem
+} from '@mui/material';
+import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
+import DeleteIcon from '@mui/icons-material/Delete';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs from 'dayjs';
 
-// @ts-ignore
-export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, users }) {
+interface User {
+    id: string;
+    full_name: string;
+    roles: string[];
+}
+
+interface CaseData {
+    _id: string;
+    guid: string;
+    priority: string;
+    dueDate: number;
+    analyst: string;
+    reviewer: string;
+    approver: string;
+    uploadDetails: { filename: string, guidUpload: string, key: string}[];
+    createdAt: string;
+}
+
+interface CaseCardProps {
+    caseData: CaseData;
+    onEdit: (id: string) => void;
+    onDelete: (id: string) => void;
+    onFieldChange: (id: string, field: string, value: any) => void;
+    fetchCases: () => void;
+    users: User[];
+}
+
+export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, users, fetchCases }: CaseCardProps) {
+    const [open, setOpen] = useState(false);
+    const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
+    const [uploadStatus, setUploadStatus] = useState<string | null>(null);
+    const [files, setFiles] = useState<{ key: string, name: string }[]>([]);
+
     const handleDateChange = (date: any) => {
         onFieldChange(caseData._id, 'dueDate', date);
     };
@@ -19,13 +75,13 @@ export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, us
         let dueDate;
 
         switch (priority) {
-            case 'Standard':
+            case 'standard':
                 dueDate = new Date(createdAtDate.getTime() + 72 * 60 * 60 * 1000); // 72 hours
                 break;
-            case 'Rush':
+            case 'rush':
                 dueDate = new Date(createdAtDate.getTime() + 24 * 60 * 60 * 1000); // 24 hours
                 break;
-            case 'Ludacris':
+            case 'ludacris':
                 dueDate = createdAtDate; // same date
                 break;
             default:
@@ -41,7 +97,76 @@ export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, us
     };
 
     const getUsersByRole = (role: string) => {
-        return users.filter((user: any) => user.roles.includes(role));
+        return users.filter((user: User) => user.roles.includes(role));
+    };
+
+    const handleClickOpen = () => {
+        setOpen(true);
+    };
+
+    const handleClose = () => {
+        setOpen(false);
+        setUploadStatus(null); // Reset upload status on close
+    };
+
+    const handleFileChange = (e: { target: { files: any; }; }) => {
+        const files = e.target.files;
+        const invalidFiles = Array.from(files).filter((file: any) => file.type !== 'application/pdf');
+        if (invalidFiles.length > 0) {
+            setUploadStatus('Only PDF files are allowed');
+            setSelectedFiles(null);
+        } else {
+            setUploadStatus(null);
+            setSelectedFiles(files);
+        }
+    };
+
+    const handleUpload = async () => {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+        const formData = new FormData();
+        Array.from(selectedFiles || []).forEach((file: any) => {
+            formData.append('files', file);
+        });
+        formData.append('guidCase', caseData.guid);
+        formData.append('uploadedBy', user.id);
+
+        try {
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+            });
+
+            const result = await response.json();
+            setUploadStatus('Upload successful');
+            setFiles(result.files || []);
+            handleClose();
+        } catch (error) {
+            setUploadStatus('Upload failed');
+        }finally
+        {
+            fetchCases()
+        }
+    };
+
+    const handleDeleteFile = async (guidCase: string, guidUpload: string, key: string) => {
+        try {
+            console.log('Deleting file:', guidCase, guidUpload, key);
+            const encodedGuidCase = encodeURIComponent(guidCase);
+            const encodedGuidUpload = encodeURIComponent(guidUpload);
+            const encodedKey = encodeURIComponent(key);
+            const response = await fetch(`/api/upload?guidCase=${encodedGuidCase}&guidUpload=${encodedGuidUpload}&key=${encodedKey}`, {
+                method: 'DELETE',
+            });
+
+            if (response.ok) {
+                onFieldChange(caseData._id, 'uploadDetails', caseData.uploadDetails.filter(upload => upload.guidUpload !== guidUpload));
+            } else {
+                console.error('Error deleting file:', response.statusText);
+            }
+        } catch (error) {
+            console.error('Error deleting file:', error);
+        }
     };
 
     return (
@@ -51,78 +176,123 @@ export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, us
                 <FormControl fullWidth variant="outlined" sx={{ mt: 2 }}>
                     <InputLabel>Priority</InputLabel>
                     <Select
-                        value={caseData.priority}
+                        value={caseData.priority || 'standard'}
                         onChange={handlePriorityChange}
-                        label="Priority"
                     >
-                        <MenuItem value="Standard">Standard</MenuItem>
-                        <MenuItem value="Rush">Rush</MenuItem>
-                        <MenuItem value="Ludacris">Ludacris</MenuItem>
+                        <MenuItem value="standard">Standard</MenuItem>
+                        <MenuItem value="rush">Rush</MenuItem>
+                        <MenuItem value="ludacris">Ludacris</MenuItem>
                     </Select>
                 </FormControl>
                 <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <DatePicker
-                        selected={new Date(caseData.createdAt)}
-                        disabled
-                        customInput={<TextField label="Created At" variant="outlined" fullWidth />}
-                    />
-                    <DatePicker
-                        selected={new Date(caseData.dueDate)}
-                        onChange={handleDateChange}
-                        customInput={<TextField label="Due Date" variant="outlined" fullWidth />}
-                    />
+                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                        <DatePicker
+                            label={'Due Date'}
+                            value={dayjs(caseData.dueDate)}
+                            onChange={handleDateChange}
+                        />
+                    </LocalizationProvider>
                 </Box>
-
                 <FormControl fullWidth variant="outlined" sx={{ mt: 2 }}>
                     <InputLabel>Analyst</InputLabel>
                     <Select
                         value={caseData.analyst || ''}
-                        onChange={(event) => handleAssigneeChange('analyst', event)}
-                        label="Analyst"
+                        onChange={(e) => handleAssigneeChange('analyst', e)}
                     >
-                        {getUsersByRole('analyst').map((user: any) => (
+                        {getUsersByRole('analyst').map((user: User) => (
                             <MenuItem key={user.id} value={user.id}>{user.full_name}</MenuItem>
                         ))}
                     </Select>
                 </FormControl>
-
                 <FormControl fullWidth variant="outlined" sx={{ mt: 2 }}>
                     <InputLabel>Reviewer</InputLabel>
                     <Select
                         value={caseData.reviewer || ''}
-                        onChange={(event) => handleAssigneeChange('reviewer', event)}
-                        label="Reviewer"
+                        onChange={(e) => handleAssigneeChange('reviewer', e)}
                     >
-                        {getUsersByRole('reviewer').map((user: any) => (
+                        {getUsersByRole('reviewer').map((user: User) => (
                             <MenuItem key={user.id} value={user.id}>{user.full_name}</MenuItem>
                         ))}
                     </Select>
                 </FormControl>
-
                 <FormControl fullWidth variant="outlined" sx={{ mt: 2 }}>
                     <InputLabel>Approver</InputLabel>
                     <Select
                         value={caseData.approver || ''}
-                        onChange={(event) => handleAssigneeChange('approver', event)}
-                        label="Approver"
+                        onChange={(e) => handleAssigneeChange('approver', e)}
                     >
-                        {getUsersByRole('approver').map((user: any) => (
+                        {getUsersByRole('approver').map((user: User) => (
                             <MenuItem key={user.id} value={user.id}>{user.full_name}</MenuItem>
                         ))}
                     </Select>
                 </FormControl>
+                <Typography variant="body2" sx={{ mt: 2 }}>Uploads:</Typography>
+                <List>
+                    {caseData.uploadDetails.map((upload, index) => (
+                        <ListItem key={index}>
+                            <ListItemIcon>
+                                <InsertDriveFileIcon />
+                            </ListItemIcon>
+                            <ListItemText primary={upload.filename} />
+                            <IconButton edge="end" onClick={() => handleDeleteFile(caseData.guid, upload.guidUpload, upload.key)}>
+                                <DeleteIcon />
+                            </IconButton>
+                        </ListItem>
+                    ))}
+                </List>
 
-                <Typography variant="body2" sx={{ mt: 2 }}>Records: {caseData.recordsReviewed?.length}</Typography>
-                <Typography variant="body2">Questions: {caseData.questions?.length}</Typography>
-                <Box sx={{ mt: 2 }}>
-                    <Button variant="contained" color="primary" onClick={() => onEdit(caseData._id)}>
-                        Edit
-                    </Button>
-                    <Button variant="contained" color="secondary" onClick={() => onDelete(caseData._id)} sx={{ ml: 2 }}>
-                        Delete
-                    </Button>
-                </Box>
+                <Grid container spacing={2} sx={{ mt: 2 }}>
+                    <Grid size={{ xs: 12, sm: 4 }}>
+                        <Button variant="contained" color="primary" onClick={() => onEdit(caseData._id)}>
+                            Edit
+                        </Button>
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 4 }}>
+                        <Button variant="contained" color="secondary" onClick={() => onDelete(caseData._id)}>
+                            Delete
+                        </Button>
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 4 }}>
+                        <Button variant="contained" color="primary" onClick={handleClickOpen}>
+                            Upload
+                        </Button>
+                    </Grid>
+                </Grid>
             </CardContent>
+            <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+                <DialogTitle>Upload Documents</DialogTitle>
+                <DialogContent>
+                    <Typography>Select files to upload:</Typography>
+                    <input type="file" multiple onChange={handleFileChange} />
+                    {uploadStatus && <Typography>{uploadStatus}</Typography>}
+                    <List>
+                        {files.map((file: any) => (
+                            <ListItem key={file.key}>
+                                <ListItemIcon>
+                                    <InsertDriveFileIcon />
+                                </ListItemIcon>
+                                <ListItemText primary={file.name} />
+                                {/*<IconButton edge="end" onClick={() => handleDeleteFile(file.key)}>*/}
+                                {/*    <DeleteIcon />*/}
+                                {/*</IconButton>*/}
+                            </ListItem>
+                        ))}
+                    </List>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleClose} color="secondary">
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={handleUpload}
+                        variant="contained"
+                        color="primary"
+                        disabled={!selectedFiles}
+                    >
+                        Upload
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Card>
     );
 }

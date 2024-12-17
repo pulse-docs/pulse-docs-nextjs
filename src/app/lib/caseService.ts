@@ -1,14 +1,23 @@
-// src/lib/caseService.ts
-import {unstable_noStore} from "next/cache";
+import { unstable_noStore } from "next/cache";
 import connect from '../gateway/mongo/mongo.resource';
-import {ObjectId} from "bson";
+import { ObjectId } from "bson";
 
 export async function getCases() {
     unstable_noStore();
     try {
         const db = await connect();
         const col = db.collection("cases");
-        const cases = col.find({}).sort({"dueDate": 1}).toArray();
+        const cases = await col.aggregate([
+            {
+                $lookup: {
+                    from: "uploads",
+                    localField: "uploads",
+                    foreignField: "guidUpload",
+                    as: "uploadDetails"
+                }
+            },
+            { $sort: { "dueDate": 1 } }
+        ]).toArray();
         return cases;
     } catch (err) {
         console.error('Failed to fetch cases:', err);
@@ -16,13 +25,12 @@ export async function getCases() {
     }
 }
 
-export async function getCase(id: string) {
+export async function getCase(guid: string) {
     unstable_noStore();
     try {
         const db = await connect();
         const col = db.collection("cases");
-        const cases = await col.findOne({"_id": new ObjectId(id)});
-        return cases;
+        return await col.findOne({ "guid": guid });
     } catch (err) {
         console.error('Failed to fetch case:', err);
         throw new Error('Failed to fetch case.');
@@ -34,7 +42,7 @@ export async function createCase(caseData: any) {
     try {
         const db = await connect();
         const col = db.collection("cases");
-        const newCase = { ...caseData, createdAt: Date.now()};
+        const newCase = { ...caseData, createdAt: Date.now() };
         await col.insertOne(newCase);
         return newCase;
     } catch (err) {
@@ -44,13 +52,13 @@ export async function createCase(caseData: any) {
 }
 
 export async function updateCase(caseData: any) {
-    console.log('case update ',caseData);
+    console.log('case update ', caseData);
     delete caseData._id;
     unstable_noStore();
     try {
         const db = await connect();
         const col = db.collection("cases");
-        await col.updateOne({"_id": new ObjectId(caseData.id)}, {$set: caseData});
+        await col.updateOne({ "_id": new ObjectId(caseData.id) }, { $set: caseData });
     } catch (err) {
         console.error('Failed to update case:', err);
         throw new Error('Failed to update case.');
@@ -59,11 +67,11 @@ export async function updateCase(caseData: any) {
 }
 
 export async function deleteCase(id: string) {
-    unstable_noStore()
+    unstable_noStore();
     try {
         const db = await connect();
         const col = db.collection("cases");
-        await col.deleteOne({"_id": new ObjectId(id)});
+        await col.deleteOne({ "_id": new ObjectId(id) });
     } catch (err) {
         console.error('Failed to delete case:', err);
         throw new Error('Failed to delete case.');

@@ -1,19 +1,26 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Typography, Box, Button} from '@mui/material';
+import { Typography, Box, Button } from '@mui/material';
 import Grid from '@mui/material/Grid2';
 import CaseCard from '@/app/components/dashboard/CaseCard';
+import { v4 as uuidv4 } from 'uuid';
+import dayjs from 'dayjs';
 
-// CaseData struct
-
+const initialCaseState = {
+    guid: uuidv4().toString(),
+    state: 'DRAFT',
+    history: '',
+    recordsReviewed: [],
+    questions: [],
+    dueDate: dayjs().valueOf(),
+    priority: 'standard'
+};
 
 export default function CasesPage() {
     const [cases, setCases] = useState([]);
     const [users, setUsers] = useState([]);
     const [selectedCase, setSelectedCase] = useState(null);
-    const router = useRouter();
 
     useEffect(() => {
         fetchCases();
@@ -21,7 +28,7 @@ export default function CasesPage() {
 
     useEffect(() => {
         fetchUsers();
-    }, [])
+    }, []);
 
     const fetchUsers = async () => {
         const organization = JSON.parse(localStorage.getItem('organization') || '{}');
@@ -47,6 +54,13 @@ export default function CasesPage() {
     };
 
     const handleFieldChange = async (id: string, field: string, value: string) => {
+        // This is weird. When upload/delete, call fetchCases
+        if (id == "" || field == "" || value == "") {
+            console.log('fetching cases');
+            await fetchCases()
+            return
+        }
+
         await fetch(`/api/cases`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -60,16 +74,20 @@ export default function CasesPage() {
         await fetchCases();
     };
 
-    const handleCreateCase = () => {
-        router.push('/dashboard/cases/create');
+    const handleCreateCase = async () => {
+        await fetch('/api/cases', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(initialCaseState),
+        });
+        await fetchCases();
     };
 
     const handleEditCase = (id: string) => {
         console.log('Edit case:', id);
-        router.push(`/dashboard/cases/edit/${id}`);
+        // Navigate to the edit page if needed
     };
 
-    // @ts-ignore
     return (
         <Box sx={{ mt: 4, flexGrow: 1 }}>
             <Typography variant="h4" component="h1" gutterBottom>
@@ -82,13 +100,14 @@ export default function CasesPage() {
             </Box>
             <Grid container spacing={4}>
                 {cases.map((caseData) => (
-                    <Grid size={{xs:12, sm:6, md:3 }} key={caseData._id}>
+                    <Grid size={{ xs: 12, sm: 6, md: 3 }} key={caseData.guid}>
                         <CaseCard
                             caseData={caseData}
                             users={users}
                             onEdit={handleEditCase}
                             onDelete={handleDelete}
                             onFieldChange={handleFieldChange}
+                            fetchCases={fetchCases}
                         />
                     </Grid>
                 ))}
