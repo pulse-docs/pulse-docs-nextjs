@@ -107,6 +107,7 @@ export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, us
     const handleClose = () => {
         setOpen(false);
         setUploadStatus(null); // Reset upload status on close
+        fetchCases();
     };
 
     const handleFileChange = (e: { target: { files: any; }; }) => {
@@ -143,7 +144,7 @@ export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, us
             handleClose();
         } catch (error) {
             setUploadStatus('Upload failed');
-        }finally
+        } finally
         {
             fetchCases()
         }
@@ -166,6 +167,8 @@ export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, us
             }
         } catch (error) {
             console.error('Error deleting file:', error);
+        } finally {
+            fetchCases()
         }
     };
 
