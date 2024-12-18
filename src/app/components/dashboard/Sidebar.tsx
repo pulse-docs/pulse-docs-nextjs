@@ -96,14 +96,14 @@ const Sidebar = ({ onThemeChange, currentTheme }: {
                         <ListItemText primary="Disability" />
                     </ListItemButton>
                 </ListItem>
-                {/*<ListItem disablePadding>*/}
-                {/*    <ListItemButton component="a" href="/dashboard/cases">*/}
-                {/*        <ListItemIcon>*/}
-                {/*            <Folder />*/}
-                {/*        </ListItemIcon>*/}
-                {/*        <ListItemText primary="Cases" />*/}
-                {/*    </ListItemButton>*/}
-                {/*</ListItem>*/}
+                <ListItem disablePadding>
+                    <ListItemButton component="a" href="/dashboard/cases">
+                        <ListItemIcon>
+                            <Folder />
+                        </ListItemIcon>
+                        <ListItemText primary="Cases" />
+                    </ListItemButton>
+                </ListItem>
             </List>
 
             <Divider />

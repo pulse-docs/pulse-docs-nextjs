@@ -6,8 +6,12 @@ const s3 = new AWS.S3();
 
 export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams;
-    if (!searchParams.has('guid')) {
-        return NextResponse.json({ status: 400, body: { message: 'document guid is required' } });
+    if (!searchParams.has('caseGuid')) {
+        return NextResponse.json({ status: 400, body: { message: 'caseGuid is required' } });
+    }
+
+    if (!searchParams.has("uploadGuid")) {
+        return NextResponse.json({ status: 400, body: { message: 'uploadGuid is required' } });
     }
 
     const bucketName = process.env.S3_BUCKET_NAME || null;
@@ -15,9 +19,10 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ status: 500, body: { message: 'S3 bucket name is required' } });
     }
 
-    const caseGuid = searchParams.get('guid');
+    const caseGuid = searchParams.get('caseGuid');
+    const uploadGuid = searchParams.get('uploadGuid');
 
-    const prefix = `uploads/${caseGuid}/thumbnails/`;
+    const prefix = `uploads/${caseGuid}/${uploadGuid}/thumbnails`;
 
     try {
         // List all files under the document's folder

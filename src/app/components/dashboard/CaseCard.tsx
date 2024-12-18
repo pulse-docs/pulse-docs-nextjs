@@ -6,7 +6,6 @@ import {
     Box,
     Button,
     FormControl,
-    Grid2 as Grid,
     InputLabel,
     Select,
     Dialog,
@@ -20,12 +19,15 @@ import {
     ListItemText,
     MenuItem
 } from '@mui/material';
+import Grid from '@mui/material/Grid2';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import DeleteIcon from '@mui/icons-material/Delete';
+import InventoryIcon from '@mui/icons-material/Inventory';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
+import { useRouter } from 'next/navigation';
 
 interface User {
     id: string;
@@ -37,11 +39,12 @@ interface CaseData {
     _id: string;
     guid: string;
     priority: string;
+    state: string;
     dueDate: number;
     analyst: string;
     reviewer: string;
     approver: string;
-    uploadDetails: { filename: string, guidUpload: string, key: string}[];
+    uploadDetails: { filename: string, guidUpload: string, key: string }[];
     createdAt: string;
 }
 
@@ -59,6 +62,7 @@ export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, us
     const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
     const [uploadStatus, setUploadStatus] = useState<string | null>(null);
     const [files, setFiles] = useState<{ key: string, name: string }[]>([]);
+    const router = useRouter();
 
     const handleDateChange = (date: any) => {
         onFieldChange(caseData._id, 'dueDate', date);
@@ -68,6 +72,11 @@ export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, us
         const newPriority = event.target.value;
         onFieldChange(caseData._id, 'priority', newPriority);
         updateDueDate(newPriority);
+    };
+
+    const handleStateChange = (event: { target: { value: any; }; }) => {
+        const newState = event.target.value;
+        onFieldChange(caseData._id, 'state', newState);
     };
 
     const updateDueDate = (priority: any) => {
@@ -144,9 +153,8 @@ export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, us
             handleClose();
         } catch (error) {
             setUploadStatus('Upload failed');
-        } finally
-        {
-            fetchCases()
+        } finally {
+            fetchCases();
         }
     };
 
@@ -168,25 +176,54 @@ export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, us
         } catch (error) {
             console.error('Error deleting file:', error);
         } finally {
-            fetchCases()
+            fetchCases();
         }
+    };
+
+    const handleInventoryClick = (caseGuid: string, uploadGuid: string) => {
+        router.push(`/dashboard/services?caseGuid=${caseGuid}&uploadGuid=${uploadGuid}`);
     };
 
     return (
         <Card sx={{ mb: 2 }}>
             <CardContent>
                 <Typography variant="h6">{caseData.guid}</Typography>
-                <FormControl fullWidth variant="outlined" sx={{ mt: 2 }}>
-                    <InputLabel>Priority</InputLabel>
-                    <Select
-                        value={caseData.priority || 'standard'}
-                        onChange={handlePriorityChange}
-                    >
-                        <MenuItem value="standard">Standard</MenuItem>
-                        <MenuItem value="rush">Rush</MenuItem>
-                        <MenuItem value="ludacris">Ludacris</MenuItem>
-                    </Select>
-                </FormControl>
+                <Grid container spacing={2}>
+                    <Grid size={{xs: 12, md:6 }}>
+                        <FormControl fullWidth variant="outlined" sx={{ mt: 2 }}>
+                            <InputLabel>Priority</InputLabel>
+                            <Select
+                                value={caseData.priority || 'standard'}
+                                onChange={handlePriorityChange}
+                            >
+                                <MenuItem value="standard">Standard</MenuItem>
+                                <MenuItem value="rush">Rush</MenuItem>
+                                <MenuItem value="ludacris">Ludacris</MenuItem>
+                            </Select>
+                        </FormControl>
+                    </Grid>
+                    <Grid size={{xs: 12, md:6 }}>
+                        <FormControl fullWidth variant="outlined" sx={{ mt: 2 }}>
+                            <InputLabel>State</InputLabel>
+                            <Select
+                                value={caseData.state || 'Draft'}
+                                onChange={handleStateChange}
+                            >
+                                <MenuItem value="Draft">Draft</MenuItem>
+                                <MenuItem value="Documents Uploaded">Documents Uploaded</MenuItem>
+                                <MenuItem value="Pages Classified">Pages Classified</MenuItem>
+                                <MenuItem value="Medical Summary Created">Medical Summary Created</MenuItem>
+                                <MenuItem value="Questions Transcribed">Questions Transcribed</MenuItem>
+                                <MenuItem value="Review In Progress">Review In Progress</MenuItem>
+                                <MenuItem value="Review Completed">Review Completed</MenuItem>
+                                <MenuItem value="Approval In Progress">Approval In Progress</MenuItem>
+                                <MenuItem value="Approved">Approved</MenuItem>
+                                <MenuItem value="Report Generated">Report Generated</MenuItem>
+                                <MenuItem value="Report Emailed">Report Emailed</MenuItem>
+                            </Select>
+                        </FormControl>
+                    </Grid>
+                </Grid>
                 <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <DatePicker
@@ -237,6 +274,9 @@ export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, us
                                 <InsertDriveFileIcon />
                             </ListItemIcon>
                             <ListItemText primary={upload.filename} />
+                            <IconButton edge="end" onClick={() => handleInventoryClick(caseData.guid, upload.guidUpload)}>
+                                <InventoryIcon />
+                            </IconButton>
                             <IconButton edge="end" onClick={() => handleDeleteFile(caseData.guid, upload.guidUpload, upload.key)}>
                                 <DeleteIcon />
                             </IconButton>
@@ -245,17 +285,17 @@ export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, us
                 </List>
 
                 <Grid container spacing={2} sx={{ mt: 2 }}>
-                    <Grid size={{ xs: 12, sm: 4 }}>
+                    <Grid size={{xs: 12, md:3 }}>
                         <Button variant="contained" color="primary" onClick={() => onEdit(caseData._id)}>
                             Edit
                         </Button>
                     </Grid>
-                    <Grid size={{ xs: 12, sm: 4 }}>
+                    <Grid size={{xs: 12, md:3 }}>
                         <Button variant="contained" color="secondary" onClick={() => onDelete(caseData._id)}>
                             Delete
                         </Button>
                     </Grid>
-                    <Grid size={{ xs: 12, sm: 4 }}>
+                    <Grid size={{xs: 12, md:3 }}>
                         <Button variant="contained" color="primary" onClick={handleClickOpen}>
                             Upload
                         </Button>
@@ -275,9 +315,6 @@ export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, us
                                     <InsertDriveFileIcon />
                                 </ListItemIcon>
                                 <ListItemText primary={file.name} />
-                                {/*<IconButton edge="end" onClick={() => handleDeleteFile(file.key)}>*/}
-                                {/*    <DeleteIcon />*/}
-                                {/*</IconButton>*/}
                             </ListItem>
                         ))}
                     </List>

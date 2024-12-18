@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from 'next/navigation';
 import React, { useState, useEffect } from 'react';
 import { DndContext, closestCenter } from '@dnd-kit/core';
 import { SortableContext } from '@dnd-kit/sortable';
@@ -14,14 +15,27 @@ export default function DnDPage() {
     const [droppedItems, setDroppedItems] = useState<{ [key: string]: { bucket: string, key: string }[] }>({});
     const [droppableAreas, setDroppableAreas] = useState<string[]>([]);
     const [caseGuid, setCaseGuid] = useState('');
+    const [uploadGuid, setUploadGuid] = useState('');
     const [droppableInfo, setDroppableInfo] = useState<{ [key: string]: { date: number | null, type: string, summary: string } }>({});
     const [showCreateService, setShowCreateService] = useState(false);
 
+    const searchParams = useSearchParams()
+
     useEffect(() => {
-        if (caseGuid) {
-            fetchMedicalServicesAndThumbnails(caseGuid).then().catch(err => console.error(err));
+        if (searchParams.get("caseGuid")) {
+            setCaseGuid(searchParams.get("caseGuid") || "");
         }
-    }, [caseGuid]);
+
+        if (searchParams.get('uploadGuid')) {
+            setUploadGuid(searchParams.get('uploadGuid') || "")
+        }
+    }, [searchParams]);
+
+    useEffect(() => {
+        if (caseGuid && uploadGuid) {
+            fetchMedicalServicesAndThumbnails(caseGuid, uploadGuid).then().catch(err => console.error(err));
+        }
+    }, [caseGuid, uploadGuid]);
 
     function logDrop(itemId: string, droppableId: string) {
         console.log(`Item ${itemId} dropped into ${droppableId}`);
@@ -110,8 +124,8 @@ export default function DnDPage() {
         await updateService({ guid: id, [field]: value });
     }
 
-    async function fetchThumbnailURLs(guid: string) {
-        const response = await fetch(`/api/pages?guid=${guid}`);
+    async function fetchThumbnailURLs(caseGuid: string, uploadGuid: string) {
+        const response = await fetch(`/api/pages?caseGuid=${caseGuid}&uploadGuid=${uploadGuid}`);
         if (!response.ok) {
             throw new Error('Failed to fetch thumbnail URLs');
         }
@@ -128,11 +142,11 @@ export default function DnDPage() {
         return data.body;
     }
 
-    async function fetchMedicalServicesAndThumbnails(caseGuid: string) {
+    async function fetchMedicalServicesAndThumbnails(caseGuid: string, uploadGuid: string) {
         try {
             const [services, thumbnails] = await Promise.all([
                 fetchMedicalServices(caseGuid),
-                fetchThumbnailURLs(caseGuid),
+                fetchThumbnailURLs(caseGuid, uploadGuid),
             ]);
 
             const newDroppableAreas = services?.map((service: any) => service.guid);
