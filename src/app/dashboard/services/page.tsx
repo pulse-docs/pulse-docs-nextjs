@@ -124,6 +124,19 @@ export default function DnDPage() {
         await updateService({ guid: id, [field]: value });
     }
 
+    async function handleRemoveItem(droppableId: string, itemId: string) {
+        setDroppedItems((prev) => {
+            const newDroppedItems = { ...prev };
+            const itemToRemove = newDroppedItems[droppableId].find(item => item.key === itemId);
+            newDroppedItems[droppableId] = newDroppedItems[droppableId].filter(item => item.key !== itemId);
+            if (itemToRemove) {
+                setAvailableItems((prevAvailable) => [...prevAvailable, itemToRemove]);
+            }
+            updateService({ guid: droppableId, items: newDroppedItems[droppableId] });
+            return newDroppedItems;
+        });
+    }
+
     async function fetchThumbnailURLs(caseGuid: string, uploadGuid: string) {
         const response = await fetch(`/api/pages?caseGuid=${caseGuid}&uploadGuid=${uploadGuid}`);
         if (!response.ok) {
@@ -199,7 +212,7 @@ export default function DnDPage() {
                         {droppableAreas.map((id) => (
                             <Grid size={{ xs: 12, sm: 6, md: 4 }} key={id}>
                                 <SortableContext items={droppedItems[id].map(obj => obj.key)}>
-                                    <Droppable id={id} info={droppableInfo[id]} handleInfoChange={handleInfoChange} onDelete={() => handleDeleteDroppable(id)}>
+                                    <Droppable id={id} info={droppableInfo[id]} handleInfoChange={handleInfoChange} onDelete={() => handleDeleteDroppable(id)} onRemoveItem={(itemId) => handleRemoveItem(id, itemId)}>
                                         {droppedItems[id]?.map((item, index) => (
                                             <Draggable key={item.key} id={item.key} index={index}>
                                                 <img src={availableItems.find(availItem => availItem.bucket === item.bucket && availItem.key === item.key)?.url || ''} alt={item.key} style={{ width: '50px', height: '50px' }} />
