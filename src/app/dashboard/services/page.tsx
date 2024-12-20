@@ -1,14 +1,14 @@
 "use client";
 
-import { useSearchParams } from 'next/navigation';
 import React, { useState, useEffect } from 'react';
-import { DndContext, closestCenter } from '@dnd-kit/core';
-import { SortableContext } from '@dnd-kit/sortable';
-import { Box, Button, Grid2 as Grid, TextField, Typography } from '@mui/material';
-import Droppable from '@/app/components/dashboard/services/droppable';
-import Draggable from '@/app/components/dashboard/services/draggable';
+import { Box, Button, TextField, Typography, Select, MenuItem, FormControl, InputLabel, Drawer, IconButton } from '@mui/material';
+import Grid from '@mui/material/Grid2'
+import MedicalService from '@/app/components/dashboard/services/medicalService';
+import MedicalPage from '@/app/components/dashboard/services/medicalPage';
 import { createService, updateService, deleteService } from '@/app/lib/servicesCallbacks';
 import { v4 as uuidv4 } from 'uuid';
+import { useSearchParams } from "next/navigation";
+import CloseIcon from '@mui/icons-material/Close';
 
 export default function DnDPage() {
     const [availableItems, setAvailableItems] = useState<{ bucket: string, key: string, url: string }[]>([]);
@@ -16,10 +16,21 @@ export default function DnDPage() {
     const [droppableAreas, setDroppableAreas] = useState<string[]>([]);
     const [caseGuid, setCaseGuid] = useState('');
     const [uploadGuid, setUploadGuid] = useState('');
-    const [droppableInfo, setDroppableInfo] = useState<{ [key: string]: { date: number | null, type: string, summary: string } }>({});
+    const [droppableInfo, setDroppableInfo] = useState<{ [key: string]: { date: string, type: string, summary: string } }>({});
     const [showCreateService, setShowCreateService] = useState(false);
+    const [zoom, setZoom] = useState<number>(100);
+    const [drawerOpen, setDrawerOpen] = useState(false);
+    const [drawerItems, setDrawerItems] = useState<{ id: string, bucket: string, key: string, url: string }[]>([]);
+    const [drawerWidth, setDrawerWidth] = useState<number>(400);
 
-    const searchParams = useSearchParams()
+    const searchParams = useSearchParams();
+
+    useEffect(() => {
+        const savedZoom = localStorage.getItem('zoom');
+        if (savedZoom) {
+            setZoom(parseInt(savedZoom, 10));
+        }
+    }, []);
 
     useEffect(() => {
         if (searchParams.get("caseGuid")) {
@@ -37,62 +48,12 @@ export default function DnDPage() {
         }
     }, [caseGuid, uploadGuid]);
 
-    function logDrop(itemId: string, droppableId: string) {
-        console.log(`Item ${itemId} dropped into ${droppableId}`);
-    }
-
-    function logRemove(itemId: string, droppableId: string) {
-        console.log(`Item ${itemId} removed from ${droppableId}`);
-    }
-
-    async function handleDragEnd(event: any) {
-        const { active, over } = event;
-        if (over) {
-            if (active.id !== over.id) {
-                setDroppedItems((prev) => {
-                    const newDroppedItems = { ...prev };
-                    for (const key in newDroppedItems) {
-                        if (newDroppedItems[key].some(item => item.key === active.id)) {
-                            logRemove(active.id, key);
-                        }
-                        newDroppedItems[key] = newDroppedItems[key].filter((item) => item.key !== active.id);
-                    }
-                    const droppedItem = availableItems.find(item => item.key === active.id);
-                    if (droppedItem) {
-                        newDroppedItems[over.id] = [...(newDroppedItems[over.id] || []), { bucket: droppedItem.bucket, key: droppedItem.key }];
-                        logDrop(active.id, over.id);
-                        updateService({ guid: over.id, items: newDroppedItems[over.id] });
-                    }
-                    return newDroppedItems;
-                });
-                setAvailableItems((prev) => prev.filter((item) => item.key !== active.id));
-            }
-        } else {
-            setAvailableItems((prev) => {
-                setDroppedItems((prevDropped) => {
-                    const newDroppedItems = { ...prevDropped };
-                    for (const key in newDroppedItems) {
-                        if (newDroppedItems[key].some(item => item.key === active.id)) {
-                            logRemove(active.id, key);
-                        }
-                        newDroppedItems[key] = newDroppedItems[key].filter((item) => item.key !== active.id);
-                    }
-                    return newDroppedItems;
-                });
-                if (!prev.some((item) => item.key === active.id)) {
-                    return [...prev, { bucket: '', key: active.id, url: '' }];
-                }
-                return prev;
-            });
-        }
-    }
-
     async function handleAddDroppable() {
         const serviceGuid = uuidv4().toString();
         setDroppableAreas([...droppableAreas, serviceGuid]);
         setDroppedItems((prev) => ({ ...prev, [serviceGuid]: [] }));
-        setDroppableInfo((prev) => ({ ...prev, [serviceGuid]: { date: null, type: '', summary: '' } }));
-        await createService({ guid: serviceGuid, caseGuid: caseGuid, date: null, type: '', summary: '' });
+        setDroppableInfo((prev) => ({ ...prev, [serviceGuid]: { date: '', type: '', summary: '' } }));
+        await createService({ guid: serviceGuid, caseGuid: caseGuid, date: '', type: '', summary: '' });
     }
 
     async function handleDeleteDroppable(id: string) {
@@ -120,21 +81,24 @@ export default function DnDPage() {
                 [field]: value,
             },
         }));
-        console.log('handle info change ', id, field, value);
         await updateService({ guid: id, [field]: value });
     }
 
-    async function handleRemoveItem(droppableId: string, itemId: string) {
+    async function handleServiceChange(itemId: string, serviceId: string) {
         setDroppedItems((prev) => {
             const newDroppedItems = { ...prev };
-            const itemToRemove = newDroppedItems[droppableId].find(item => item.key === itemId);
-            newDroppedItems[droppableId] = newDroppedItems[droppableId].filter(item => item.key !== itemId);
-            if (itemToRemove) {
-                setAvailableItems((prevAvailable) => [...prevAvailable, itemToRemove]);
+            for (const key in newDroppedItems) {
+                newDroppedItems[key] = newDroppedItems[key].filter(item => item.key !== itemId);
             }
-            updateService({ guid: droppableId, items: newDroppedItems[droppableId] });
+
+            // Pluck the object from availableItems with the matching Key.
+            const item = availableItems.find(item => item.key == itemId)
+            // @ts-ignore
+            newDroppedItems[serviceId] = [...(newDroppedItems[serviceId] || []), item];
+            updateService({ guid: serviceId, items: newDroppedItems[serviceId] });
             return newDroppedItems;
         });
+        setAvailableItems((prev) => prev.filter(item => item.key !== itemId));
     }
 
     async function fetchThumbnailURLs(caseGuid: string, uploadGuid: string) {
@@ -163,8 +127,8 @@ export default function DnDPage() {
             ]);
 
             const newDroppableAreas = services?.map((service: any) => service.guid);
-            const newDroppedItems: { [key: string]: { bucket: string, key: string }[] } = {};
-            const newDroppableInfo: { [key: string]: { date: number | null, type: string, summary: string } } = {};
+            const newDroppedItems: { [key: string]: { bucket: string, key: string, url: string }[] } = {};
+            const newDroppableInfo: { [key: string]: { date: string, type: string, summary: string } } = {};
 
             services.forEach((service: any) => {
                 newDroppedItems[service.guid] = service.items || [];
@@ -179,69 +143,160 @@ export default function DnDPage() {
             setDroppedItems(newDroppedItems);
             setDroppableInfo(newDroppableInfo);
 
-            const availableItemsSet = new Set(thumbnails.map((item: any) => JSON.stringify(item)));
+            const assignedKeys = new Set();
             services.forEach((service: any) => {
-                service?.items?.forEach((item: { bucket: string, key: string }) => {
-                    availableItemsSet.delete(JSON.stringify(item));
+                service?.items?.forEach((item: { bucket: string, key: string, url: string }) => {
+                    assignedKeys.add(item.key);
                 });
             });
 
-            setAvailableItems(Array.from(availableItemsSet).map((item: any) => JSON.parse(item)));
+            setAvailableItems(thumbnails.filter((item: any) => !assignedKeys.has(item.key)));
         } catch (error) {
             console.error('Error fetching medical services and thumbnails:', error);
         }
     }
 
+    const handleZoomChange = (event: React.ChangeEvent<{ value: unknown }>) => {
+        const newZoom = event.target.value as number;
+        setZoom(newZoom);
+        localStorage.setItem('zoom', newZoom.toString());
+    };
+
+    const getGridItemSize = () => {
+        if (zoom >= 80) return 12;
+        if (zoom >= 60) return 6;
+        if (zoom >= 40) return 4;
+        return 3;
+    };
+
+    const handleOpenDrawer = (items: { id: string, bucket: string, key: string, url: string }[]) => {
+        setDrawerItems(items);
+        setDrawerOpen(true);
+    };
+
+    const handleCloseDrawer = () => {
+        setDrawerOpen(false);
+    };
+
+    const handleMouseDown = (e: React.MouseEvent) => {
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+        setDrawerWidth(e.clientX);
+    };
+
+    const handleMouseUp = () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    // @ts-ignore
+    // @ts-ignore
+    // @ts-ignore
+    // @ts-ignore
     return (
-        <DndContext onDragEnd={handleDragEnd} collisionDetection={closestCenter}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <Box>
-                    <TextField
-                        label="GUID"
-                        value={caseGuid}
-                        onChange={(e) => setCaseGuid(e.target.value)}
-                        fullWidth
-                    />
-                    {/*<Button variant="contained" onClick={() => fetchMedicalServicesAndThumbnails(caseGuid)} sx={{ mt: 2 }}>*/}
-                    {/*    Fetch Thumbnails*/}
-                    {/*</Button>*/}
-                </Box>
-                <Box>
-                    <Typography variant="h6">Medical Services</Typography>
-                    <Grid container spacing={2}>
-                        {droppableAreas.map((id) => (
-                            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={id}>
-                                <SortableContext items={droppedItems[id].map(obj => obj.key)}>
-                                    <Droppable id={id} info={droppableInfo[id]} handleInfoChange={handleInfoChange} onDelete={() => handleDeleteDroppable(id)} onRemoveItem={(itemId) => handleRemoveItem(id, itemId)}>
-                                        {droppedItems[id]?.map((item, index) => (
-                                            <Draggable key={item.key} id={item.key} index={index}>
-                                                <img src={availableItems.find(availItem => availItem.bucket === item.bucket && availItem.key === item.key)?.url || ''} alt={item.key} style={{ width: '50px', height: '50px' }} />
-                                            </Draggable>
-                                        ))}
-                                    </Droppable>
-                                </SortableContext>
-                            </Grid>
-                        ))}
-                        <Grid size={{ xs: 12 }}>
-                            <Button variant="contained" onClick={handleAddDroppable}>
-                                Create Medical Service
-                            </Button>
-                        </Grid>
-                    </Grid>
-                </Box>
-                <Box>
-                    <Typography variant="h6">Draggable Items - {availableItems?.length}</Typography>
-                    <Grid container spacing={2}>
-                        {availableItems.map((item, index) => (
-                            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={item.key}>
-                                <Draggable id={item.key} index={index}>
-                                    <img src={item.url} alt={item.key} style={{ width: '100%' }} />
-                                </Draggable>
-                            </Grid>
-                        ))}
-                    </Grid>
-                </Box>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Box>
+                <TextField
+                    label="GUID"
+                    value={caseGuid}
+                    onChange={(e) => setCaseGuid(e.target.value)}
+                    fullWidth
+                />
             </Box>
-        </DndContext>
+            <Box>
+                <Button variant="contained" onClick={handleAddDroppable} sx={{ mb: 2 }}>
+                    Create Medical Service
+                </Button>
+                <Typography variant="h6">Medical Services</Typography>
+                <Grid container spacing={2}>
+                    {droppableAreas.map((id) => (
+                        <Grid size={{xs:12, sm:6, md:4}} key={id}>
+                            <MedicalService
+                                id={id}
+                                info={droppableInfo[id]}
+                                items={droppedItems[id]}
+                                medicalServices={droppableAreas.map(areaId => ({
+                                    id: areaId,
+                                    date: droppableInfo[areaId].date,
+                                    type: droppableInfo[areaId].type
+                                }))}
+                                onServiceChange={handleServiceChange}
+                                handleInfoChange={handleInfoChange}
+                                onDelete={() => handleDeleteDroppable(id)}
+                                onOpenDrawer={handleOpenDrawer}
+                            />
+                        </Grid>
+                    ))}
+                </Grid>
+            </Box>
+            <Box>
+                <Typography variant="h6">Pages - {availableItems?.length}</Typography>
+                <FormControl fullWidth sx={{ mb: 2 }}>
+                    <InputLabel>Zoom</InputLabel>
+                    <Select value={zoom} onChange={handleZoomChange}>
+                        {[...Array(9)].map((_, i) => (
+                            <MenuItem key={i} value={(i + 2) * 10}>{(i + 2) * 10}%</MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+                <Grid container spacing={2}>
+                    {availableItems.map((item, index) => (
+                        <Grid  size={{xs: getGridItemSize()}} key={item.key}>
+                            <MedicalPage
+                                id={item.key}
+                                index={index}
+                                medicalServices={droppableAreas.map(areaId => ({
+                                    id: areaId,
+                                    date: droppableInfo[areaId].date,
+                                    type: droppableInfo[areaId].type
+                                }))}
+                                selectedService=""
+                                onServiceChange={handleServiceChange}
+                                url={item.url}
+                                zoom={zoom}
+                            >
+                                <img src={item.url} alt={item.key} style={{ width: '100%' }} />
+                            </MedicalPage>
+                        </Grid>
+                    ))}
+                </Grid>
+            </Box>
+            <Drawer
+                anchor="right"
+                open={drawerOpen}
+                onClose={handleCloseDrawer}
+                PaperProps={{ style: { width: drawerWidth } }}
+                ModalProps={{ keepMounted: true }}
+                variant="persistent"
+            >
+                <Box sx={{ width: '100%', padding: 2, position: 'relative' }}>
+                    <IconButton onClick={handleCloseDrawer} sx={{ mb: 2 }}>
+                        <CloseIcon />
+                    </IconButton>
+                    <Box
+                        sx={{
+                            width: '5px',
+                            height: '100%',
+                            backgroundColor: 'gray',
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            cursor: 'ew-resize',
+                        }}
+                        onMouseDown={handleMouseDown}
+                    />
+                    <Grid container spacing={2}>
+                        {drawerItems.map((item, index) => (
+                            <Grid size={{xs:12}} key={item.key}>
+                                <img src={item.url} alt={`Page ${index + 1}`} style={{ width: '100%' }} />
+                            </Grid>
+                        ))}
+                    </Grid>
+                </Box>
+            </Drawer>
+        </Box>
     );
 }

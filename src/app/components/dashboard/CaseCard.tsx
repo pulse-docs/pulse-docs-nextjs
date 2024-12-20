@@ -106,6 +106,7 @@ export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, us
     };
 
     const getUsersByRole = (role: string) => {
+        console.log('users:', users);
         return users.filter((user: User) => user.roles.includes(role));
     };
 
