@@ -106,7 +106,6 @@ export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, us
     };
 
     const getUsersByRole = (role: string) => {
-        console.log('users:', users);
         return users.filter((user: User) => user.roles.includes(role));
     };
 
@@ -225,7 +224,7 @@ export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, us
                         </FormControl>
                     </Grid>
                 </Grid>
-                <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Box sx={{ mt: 2, display: 'flex', alignItems: 'top', gap: 2 }}>
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <DatePicker
                             label={'Due Date'}
@@ -286,17 +285,17 @@ export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, us
                 </List>
 
                 <Grid container spacing={2} sx={{ mt: 2 }}>
-                    <Grid size={{xs: 12, md:3 }}>
-                        <Button variant="contained" color="primary" onClick={() => onEdit(caseData._id)}>
+                    <Grid size={{xs: 12, md:4 }}>
+                        <Button variant="contained" color="primary" onClick={() => onEdit(caseData.guid)}>
                             Edit
                         </Button>
                     </Grid>
-                    <Grid size={{xs: 12, md:3 }}>
+                    <Grid size={{md:12, lg: 4 }}>
                         <Button variant="contained" color="secondary" onClick={() => onDelete(caseData._id)}>
                             Delete
                         </Button>
                     </Grid>
-                    <Grid size={{xs: 12, md:3 }}>
+                    <Grid size={{md: 12, lg:4 }}>
                         <Button variant="contained" color="primary" onClick={handleClickOpen}>
                             Upload
                         </Button>

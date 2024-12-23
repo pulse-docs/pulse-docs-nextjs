@@ -1,6 +1,7 @@
 import { unstable_noStore } from "next/cache";
 import connect from '../gateway/mongo/mongo.resource';
 import { ObjectId } from "bson";
+import {getSignedURL, getThumbnailUrls} from "@/app/api/pages/route";
 
 export async function getCases() {
     unstable_noStore();
@@ -25,12 +26,39 @@ export async function getCases() {
     }
 }
 
+
 export async function getCase(guid: string) {
     unstable_noStore();
     try {
         const db = await connect();
         const col = db.collection("cases");
-        return await col.findOne({ "guid": guid });
+        const cases = await col.aggregate([
+            { $match: { "guid": guid } },
+            {
+                $lookup: {
+                    from: "uploads",
+                    localField: "uploads",
+                    foreignField: "guidUpload",
+                    as: "uploadDetails"
+                }
+            },
+            {
+                $lookup: {
+                    from: "services",
+                    localField: "guid",
+                    foreignField: "caseGuid",
+                    as: "serviceDetails"
+                }
+            }
+        ]).toArray();
+
+        cases[0].serviceDetails.forEach((service: any) => {
+            service.items.forEach((item: any) => {
+                item.url = getSignedURL(item.bucket, item.key)
+            })
+        })
+
+        return cases[0];
     } catch (err) {
         console.error('Failed to fetch case:', err);
         throw new Error('Failed to fetch case.');

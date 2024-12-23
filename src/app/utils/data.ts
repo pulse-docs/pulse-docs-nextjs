@@ -194,7 +194,7 @@
 //         invoices.status
 //       FROM invoices
 //       WHERE invoices.id = $1;
-//     `, [id]);
+//     `, [guid]);
     
 //     console.log('rows: ', data.rows);
 //     const invoice = data.rows.map((invoice) => ({

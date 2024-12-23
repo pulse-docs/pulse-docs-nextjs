@@ -112,7 +112,7 @@
 // //         await client.query(`
 // //             DELETE FROM invoices
 // //             WHERE id = $1;
-// //         `, [id]);
+// //         `, [guid]);
 // //     } catch {
 // //         throw new Error('Failed to delete invoice.');
 // //     } finally {

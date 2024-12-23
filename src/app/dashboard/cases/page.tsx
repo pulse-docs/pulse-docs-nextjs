@@ -6,6 +6,7 @@ import Grid from '@mui/material/Grid2';
 import CaseCard from '@/app/components/dashboard/CaseCard';
 import { v4 as uuidv4 } from 'uuid';
 import dayjs from 'dayjs';
+import {useRouter} from 'next/navigation';
 
 const initialCaseState = {
     guid: uuidv4().toString(),
@@ -21,6 +22,7 @@ export default function CasesPage() {
     const [cases, setCases] = useState([]);
     const [users, setUsers] = useState([]);
     const [selectedCase, setSelectedCase] = useState(null);
+    const router = useRouter();
 
     useEffect(() => {
         fetchCases();
@@ -40,6 +42,7 @@ export default function CasesPage() {
     const fetchCases = async () => {
         const response = await fetch('/api/cases');
         const data = await response.json();
+        console.log(data)
         setCases(data.body);
     };
 
@@ -83,8 +86,9 @@ export default function CasesPage() {
         await fetchCases();
     };
 
-    const handleEditCase = (id: string) => {
-        console.log('Edit case:', id);
+    const handleEditCase = (guid: string) => {
+        console.log('Edit case:', guid);
+        router.push(`/dashboard/cases/edit/${guid}`);
         // Navigate to the edit page if needed
     };
 
@@ -100,7 +104,7 @@ export default function CasesPage() {
             </Box>
             <Grid container spacing={4}>
                 {cases.map((caseData) => (
-                    <Grid size={{ xs: 12, sm: 6, md: 3 }} key={caseData.guid}>
+                    <Grid size={{ md: 12, lg: 6, xl: 4 }} key={caseData.guid}>
                         <CaseCard
                             caseData={caseData}
                             users={users}
