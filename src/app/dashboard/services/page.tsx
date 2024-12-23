@@ -118,7 +118,6 @@ export default function DnDPage() {
         const data = await response.json();
         return data.body;
     }
-
     async function fetchMedicalServicesAndThumbnails(caseGuid: string, uploadGuid: string) {
         try {
             const [services, thumbnails] = await Promise.all([
@@ -131,7 +130,13 @@ export default function DnDPage() {
             const newDroppableInfo: { [key: string]: { date: string, type: string, summary: string } } = {};
 
             services.forEach((service: any) => {
-                newDroppedItems[service.guid] = service.items || [];
+                newDroppedItems[service.guid] = service.items.map((item: { bucket: string, key: string }) => {
+                    const thumbnail = thumbnails.find((thumb: { key: string }) => thumb.key === item.key);
+                    return {
+                        ...item,
+                        url: thumbnail ? thumbnail.url : ''
+                    };
+                });
                 newDroppableInfo[service.guid] = {
                     date: service.date,
                     type: service.type,
@@ -145,12 +150,12 @@ export default function DnDPage() {
 
             const assignedKeys = new Set();
             services.forEach((service: any) => {
-                service?.items?.forEach((item: { bucket: string, key: string, url: string }) => {
+                service?.items?.forEach((item: { key: string }) => {
                     assignedKeys.add(item.key);
                 });
             });
 
-            setAvailableItems(thumbnails.filter((item: any) => !assignedKeys.has(item.key)));
+            setAvailableItems(thumbnails.filter((item: { key: string }) => !assignedKeys.has(item.key)));
         } catch (error) {
             console.error('Error fetching medical services and thumbnails:', error);
         }
