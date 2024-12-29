@@ -31,6 +31,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { useRouter } from 'next/navigation';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { v4 as uuidv4 } from 'uuid';
+import TimelineComponent from '@/app/components/dashboard/specific/timeline/timeline';
 
 const initialCaseState = {
     guid: uuidv4().toString(),

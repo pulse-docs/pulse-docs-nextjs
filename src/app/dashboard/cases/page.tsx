@@ -25,19 +25,30 @@ export default function CasesPage() {
     const router = useRouter();
 
     useEffect(() => {
+        fetchUsers().then(users => setUsers(users));
+
+    }, [cases]);
+
+    useEffect(() => {
         fetchCases();
     }, []);
 
-    useEffect(() => {
-        fetchUsers();
-    }, []);
 
-    const fetchUsers = async () => {
-        const organization = JSON.parse(localStorage.getItem('organization') || '{}');
+    async function fetchUsers() {
+        // Exists in local storage
+        if (localStorage.getItem('users') !== null) {
+            return JSON.parse(localStorage.getItem('users') || '{}');
+        }
+        // Must get users
+        const organization = JSON   .parse(localStorage.getItem('organization') || '{}');
         const response = await fetch(`/api/users?orgCode=${organization?.orgCode}`);
-        const data = await response.json();
-        setUsers(data);
-    };
+        if (!response.ok) {
+            throw new Error('Failed to fetch users');
+        }
+        const userResp = await response.json();
+        localStorage.setItem('users', JSON.stringify(userResp));
+        return userResp;
+    }
 
     const fetchCases = async () => {
         const response = await fetch('/api/cases');

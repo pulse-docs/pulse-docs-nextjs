@@ -63,6 +63,7 @@ export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, us
     const [uploadStatus, setUploadStatus] = useState<string | null>(null);
     const [files, setFiles] = useState<{ key: string, name: string }[]>([]);
     const router = useRouter();
+    console.log('users from casecard', users)
 
     const handleDateChange = (date: any) => {
         onFieldChange(caseData._id, 'dueDate', date);
@@ -106,6 +107,7 @@ export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, us
     };
 
     const getUsersByRole = (role: string) => {
+        if (!users.length) return [];
         return users.filter((user: User) => user.roles.includes(role));
     };
 

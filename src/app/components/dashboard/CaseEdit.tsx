@@ -31,6 +31,8 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
 import { useRouter } from 'next/navigation';
 import MedicalService from './services/medicalService';
+import CaseQuestion from '@/app/components/dashboard/CaseQuestion';
+import {v4 as uuidv4} from 'uuid';
 
 async function fetchCase(guid: string) {
     const response = await fetch(`/api/cases?guid=${guid}`);
@@ -41,12 +43,27 @@ async function fetchCase(guid: string) {
 }
 
 async function fetchUsers() {
+    if (localStorage.getItem('users') !== null) {
+        return JSON.parse(localStorage.getItem('users') || '{}');
+    }
+
     const organization = JSON.parse(localStorage.getItem('organization') || '{}');
     const response = await fetch(`/api/users?orgCode=${organization?.orgCode}`);
     if (!response.ok) {
         throw new Error('Failed to fetch users');
     }
-    return await response.json();
+    const userResp = await response.json();
+    console.log('users', userResp);
+    localStorage.setItem('users', JSON.stringify(userResp));
+    return userResp;
+}
+
+async function fetchQuestions(caseGuid: string) {
+    const response = await fetch(`/api/questions?caseGuid=${caseGuid}`);
+    if (!response.ok) {
+        throw new Error('Failed to fetch questions');
+    }
+    return (await response.json()).body;
 }
 
 export function CaseEdit({ guid }: { guid: string }) {
@@ -59,10 +76,15 @@ export function CaseEdit({ guid }: { guid: string }) {
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [drawerItems, setDrawerItems] = useState<{ id: string, bucket: string, key: string, url: string }[]>([]);
     const [drawerWidth, setDrawerWidth] = useState<number>(400);
+    const [questions, setQuestions] = useState<{ caseGuid: string, questionGuid: string, questionText: string, responseText: string }[]>([]);
     const router = useRouter();
 
     useEffect(() => {
         fetchCase(guid).then((data) => setCaseData(data)).catch((error) => console.error(error));
+    }, [guid]);
+
+    useEffect(() => {
+        fetchQuestions(guid).then((data) => setQuestions(data)).catch((error) => console.error(error));
     }, [guid]);
 
     useEffect(() => {
@@ -118,6 +140,7 @@ export function CaseEdit({ guid }: { guid: string }) {
     };
 
     const getUsersByRole = (role: string) => {
+        if (!users.length){return []}
         return users.filter((user: any) => user.roles.includes(role));
     };
 
@@ -213,6 +236,53 @@ export function CaseEdit({ guid }: { guid: string }) {
         document.removeEventListener('mouseup', handleMouseUp);
     };
 
+    const handleAddQuestion = () => {
+        const newQuestion = { caseGuid: guid, questionGuid: `${uuidv4().toString()}` , questionText: '', responseText: '' };
+        fetch(`/api/questions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newQuestion),
+        }).then((response) => {
+            if (!response.ok) {
+                console.error('Failed to create question:', response.statusText);
+                return;
+            }
+            setQuestions([...questions, newQuestion]);
+        })
+    };
+
+    const handleDeleteQuestion = (questionGuid: string) => {
+        console.log('Delete question:', questionGuid);
+        fetch(`/api/questions?guid=${questionGuid}`, { method: 'DELETE' })
+            .then((response) => {
+                if (!response.ok) {
+                    console.error('Failed to delete question:', response.statusText);
+                    return;
+                }
+                setQuestions(questions.filter(question => question.questionGuid !== questionGuid));
+            })
+    };
+
+    const handleEditQuestion = (questionGuid: string, field: string, value: string) => {
+        setQuestions(questions.map(question => {
+            if (question.questionGuid === questionGuid) {
+                return { ...question, [field]: value };
+            }
+            return question;
+        }));
+        fetch(`/api/questions`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ guid: questionGuid, [field]: value }),
+        }).then((response) => {
+            if (!response.ok) {
+                console.error('Failed to update question:', response.statusText);
+                return;
+            }
+
+        })
+    }
+
     if (!caseData) {
         return <div>Loading...</div>;
     }
@@ -289,14 +359,12 @@ export function CaseEdit({ guid }: { guid: string }) {
                         </Select>
                     </FormControl>
                 </Grid>
-
                 <Grid item xs={12}>
                     <Grid item xs={12} md={4}>
                         <Button variant="contained" color="primary" onClick={handleClickOpen}>
                             Upload Document
                         </Button>
                     </Grid>
-                    {/*<Typography variant="body2">Uploads:</Typography>*/}
                     <List>
                         {caseData.uploadDetails.map((upload: any, index: number) => (
                             <ListItem key={index}>
@@ -318,7 +386,7 @@ export function CaseEdit({ guid }: { guid: string }) {
                     <Typography variant="body2">Medical Services:</Typography>
                     <Grid container spacing={2}>
                         {caseData.serviceDetails.map((service: any) => (
-                            <Grid item xs={12} md={4} lg={2} key={service.id}>
+                            <Grid item xs={12} md={4} lg={3} key={service.id}>
                                 <MedicalService
                                     id={service.id}
                                     info={service}
@@ -326,6 +394,27 @@ export function CaseEdit({ guid }: { guid: string }) {
                                     medicalServices={caseData.serviceDetails}
                                     onOpenDrawer={handleOpenDrawer}
                                     disabled
+                                />
+                            </Grid>
+                        ))}
+                    </Grid>
+                </Grid>
+                <Grid item xs={12}>
+                    <Typography variant="body2">Questions:</Typography>
+                    <Button variant="contained" color="primary" onClick={handleAddQuestion}>
+                        Add Question
+                    </Button>
+                    <Grid container spacing={2} sx={{ mt: 2 }}>
+                        {questions.map((question) => (
+                            <Grid item xs={12}  md={4} lg={3} key={question.questionGuid}>
+                                <CaseQuestion
+                                    caseGuid={question.caseGuid}
+                                    questionGuid={question.questionGuid}
+                                    questionText={question.questionText}
+                                    responseText={question.responseText}
+                                    onDelete={handleDeleteQuestion}
+                                    onInfoChange={handleEditQuestion}
+
                                 />
                             </Grid>
                         ))}
