@@ -8,6 +8,8 @@ import { v4 as uuidv4 } from 'uuid';
 import dayjs from 'dayjs';
 import {useRouter} from 'next/navigation';
 
+import {CaseData} from "@/app/types/case";
+
 const initialCaseState = {
     guid: uuidv4().toString(),
     state: 'DRAFT',
@@ -114,7 +116,7 @@ export default function CasesPage() {
                 </Button>
             </Box>
             <Grid container spacing={4}>
-                {cases.map((caseData) => (
+                {cases.map((caseData: CaseData) => (
                     <Grid size={{ md: 12, lg: 6, xl: 4 }} key={caseData.guid}>
                         <CaseCard
                             caseData={caseData}

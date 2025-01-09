@@ -1,5 +1,6 @@
 import React from 'react';
-import { Card, CardContent, FormControl, InputLabel, MenuItem, Select, Box } from '@mui/material';
+import {Box, Card, CardContent, FormControl, InputLabel, MenuItem, Select} from '@mui/material';
+import Image from 'next/image';
 import dayjs from 'dayjs';
 
 interface PageProps {
@@ -32,7 +33,7 @@ const MedicalPage: React.FC<PageProps> = ({ id, index, medicalServices, selected
                         </Select>
                     </FormControl>
                 </Box>
-                <img src={url} alt={`Page ${index + 1}`} style={{ width: thumbnail ? '100px' : `${zoom}%`, marginBottom: '16px' }} />
+                <img src={url} alt={`Page ${index + 1}`} style={{ width: !zoom ? '100%' : `${zoom}%`, marginBottom: '16px' }} />
             </CardContent>
         </Card>
     );

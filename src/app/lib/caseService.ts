@@ -1,7 +1,7 @@
 import { unstable_noStore } from "next/cache";
 import connect from '../gateway/mongo/mongo.resource';
 import { ObjectId } from "bson";
-import {getSignedURL, getThumbnailUrls} from "@/app/api/pages/route";
+import {getSignedURL, getThumbnailUrls} from "@/app/lib/pagesService";
 
 export async function getCases() {
     unstable_noStore();

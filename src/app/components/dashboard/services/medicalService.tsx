@@ -20,7 +20,7 @@ interface MedicalServiceProps {
     onOpenDrawer: (items: { id: string, bucket: string, key: string, url: string }[]) => void;
 }
 
-const MedicalService: React.FC<MedicalServiceProps> = ({ id, info, items, medicalServices, onServiceChange, handleInfoChange, onDelete, onOpenDrawer }) => {
+const MedicalService: React.FC<MedicalServiceProps> = ({ id, info, items, medicalServices, onServiceChange, handleInfoChange, onDelete, onOpenDrawer}) => {
     const [open, setOpen] = useState(false);
     const [types, setTypes] = useState<string[]>([]);
     const [newType, setNewType] = useState('');
@@ -78,7 +78,7 @@ const MedicalService: React.FC<MedicalServiceProps> = ({ id, info, items, medica
                     label="Date"
                     value={dayjs(info.date)}
                     onChange={(newValue) => handleInfoChange(id, 'date', newValue?.valueOf())}
-                    renderInput={(params) => <TextField {...params} fullWidth sx={{ mb: 2 }} />}
+                    // renderInput={(params) => <TextField {...params} fullWidth sx={{ mb: 2 }} />}
                 />
             </LocalizationProvider>
             <FormControl fullWidth sx={{ mb: 2 }}>
@@ -126,7 +126,7 @@ const MedicalService: React.FC<MedicalServiceProps> = ({ id, info, items, medica
                 <AccordionDetails>
                     <Grid container spacing={2}>
                         {items.map((item, index) => (
-                            <Grid item xs={12} md={6} key={item.key}>
+                            <Grid size={{xs:12, md:6}} key={item.key}>
                                 <MedicalPage
                                     id={item.key}
                                     index={index}
@@ -135,7 +135,7 @@ const MedicalService: React.FC<MedicalServiceProps> = ({ id, info, items, medica
                                     onServiceChange={onServiceChange}
                                     url={item.url}
                                     thumbnail={true}
-                                />
+                                    zoom={100}/>
                             </Grid>
                         ))}
                     </Grid>

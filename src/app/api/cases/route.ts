@@ -1,8 +1,6 @@
 // src/pages/api/cases/index.ts
-import { NextRequest } from "next/server";
-import { NextApiRequest, NextApiResponse } from 'next';
-import { getCases, getCase, createCase, updateCase, deleteCase } from '../../lib/caseService';
-import {NextResponse} from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { getCases, getCase, createCase, updateCase, deleteCase } from '@/app/lib/caseService';
 import {getKindeServerSession} from "@kinde-oss/kinde-auth-nextjs/server";
 
 

@@ -21,6 +21,7 @@ import {
     Grid,
     Drawer
 } from '@mui/material';
+import Image from 'next/image'
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import DeleteIcon from '@mui/icons-material/Delete';
 import InventoryIcon from '@mui/icons-material/Inventory';
@@ -325,7 +326,7 @@ export function CaseEdit({ guid }: { guid: string }) {
                             label="Due Date"
                             value={dayjs(caseData.dueDate)}
                             onChange={handleDateChange}
-                            renderInput={(params) => <TextField {...params} fullWidth />}
+                            // renderInput={(params) => <TextField {...params} fullWidth />}
                         />
                     </LocalizationProvider>
                 </Grid>
@@ -393,7 +394,10 @@ export function CaseEdit({ guid }: { guid: string }) {
                                     items={service.items}
                                     medicalServices={caseData.serviceDetails}
                                     onOpenDrawer={handleOpenDrawer}
-                                    disabled
+                                    onServiceChange={data => console.log(data)}
+                                    handleInfoChange={data => console.log(data)}
+                                    onDelete={() => null}
+                                    // disabled={true}
                                 />
                             </Grid>
                         ))}
@@ -473,8 +477,8 @@ export function CaseEdit({ guid }: { guid: string }) {
                     />
                     <Grid container spacing={2}>
                         {drawerItems.map((item, index) => (
-                            <Grid size={{xs:12}} key={item.key}>
-                                <img src={item.url} alt={`Page ${index + 1}`} style={{ width: '100%' }} />
+                            <Grid xs={12} key={item.key}>
+                                <Image src={item.url} alt={`Page ${index + 1}`} style={{ width: '100%' }} />
                             </Grid>
                         ))}
                     </Grid>

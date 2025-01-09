@@ -1,51 +1,39 @@
-import { useState } from 'react';
+import {useState} from 'react';
 import {
-    Card,
-    CardContent,
-    Typography,
     Box,
     Button,
-    FormControl,
-    InputLabel,
-    Select,
+    Card,
+    CardContent,
     Dialog,
-    DialogTitle,
-    DialogContent,
     DialogActions,
+    DialogContent,
+    DialogTitle,
+    FormControl,
     IconButton,
+    InputLabel,
     List,
     ListItem,
     ListItemIcon,
     ListItemText,
-    MenuItem
+    MenuItem,
+    Select,
+    Typography
 } from '@mui/material';
 import Grid from '@mui/material/Grid2';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import DeleteIcon from '@mui/icons-material/Delete';
 import InventoryIcon from '@mui/icons-material/Inventory';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import {DatePicker} from '@mui/x-date-pickers/DatePicker';
+import {LocalizationProvider} from '@mui/x-date-pickers/LocalizationProvider';
+import {AdapterDayjs} from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
-import { useRouter } from 'next/navigation';
+import {useRouter} from 'next/navigation';
+import {CaseData} from '@/app/types/case';
 
 interface User {
     id: string;
     full_name: string;
     roles: string[];
-}
-
-interface CaseData {
-    _id: string;
-    guid: string;
-    priority: string;
-    state: string;
-    dueDate: number;
-    analyst: string;
-    reviewer: string;
-    approver: string;
-    uploadDetails: { filename: string, guidUpload: string, key: string }[];
-    createdAt: string;
 }
 
 interface CaseCardProps {
@@ -170,7 +158,7 @@ export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, us
                 method: 'DELETE',
             });
 
-            if (response.ok) {
+            if (response.ok && caseData.uploadDetails) {
                 onFieldChange(caseData._id, 'uploadDetails', caseData.uploadDetails.filter(upload => upload.guidUpload !== guidUpload));
             } else {
                 console.error('Error deleting file:', response.statusText);
@@ -270,7 +258,7 @@ export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, us
                 </FormControl>
                 <Typography variant="body2" sx={{ mt: 2 }}>Uploads:</Typography>
                 <List>
-                    {caseData.uploadDetails.map((upload, index) => (
+                    {caseData.uploadDetails ? caseData.uploadDetails.map((upload, index) => (
                         <ListItem key={index}>
                             <ListItemIcon>
                                 <InsertDriveFileIcon />
@@ -283,7 +271,7 @@ export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, us
                                 <DeleteIcon />
                             </IconButton>
                         </ListItem>
-                    ))}
+                    )): <div></div>}
                 </List>
 
                 <Grid container spacing={2} sx={{ mt: 2 }}>

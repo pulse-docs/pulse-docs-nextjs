@@ -1,47 +1,37 @@
 "use client";
-import { useState, useEffect } from 'react';
+import {useEffect, useState} from 'react';
 import {
     Box,
     Button,
-    MenuItem,
-    Select,
-    InputLabel,
-    FormControl,
+    Card,
+    CardActions,
+    CardContent,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    IconButton,
     List,
     ListItem,
     ListItemIcon,
     ListItemText,
-    Typography,
+    SelectChangeEvent,
     TextField,
-    Card,
-    CardContent,
-    CardActions,
-    IconButton,
-    DialogTitle,
-    DialogContent,
-    Dialog,
-    DialogActions,
-    Grid
+    Typography
 } from '@mui/material';
+import Grid from '@mui/material/Grid2';
+import Image from 'next/image'
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
-import AddIcon from '@mui/icons-material/Add';
-import dayjs from 'dayjs';
-import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { useRouter } from 'next/navigation';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { v4 as uuidv4 } from 'uuid';
-import TimelineComponent from '@/app/components/dashboard/specific/timeline/timeline';
+import AddIcon from '@mui/icons-material/Add';
+import dayjs, {Dayjs} from 'dayjs';
+import {DatePicker, LocalizationProvider} from '@mui/x-date-pickers';
+import {AdapterDayjs} from '@mui/x-date-pickers/AdapterDayjs';
+import {useRouter} from 'next/navigation';
 
-const initialCaseState = {
-    guid: uuidv4().toString(),
-    state: 'DRAFT',
-    history: '',
-    recordsReviewed: [],
-    questions: [],
-    dueDate: dayjs().valueOf(),
-    priority: 'standard'
-};
+import {CaseData, createCaseData, Question, Record} from "@/app/types/case";
+import {MetadataSection} from "@/app/components/dashboard/specific/cases/metadata";
+
 
 async function fetchCaseData(id: string) {
     const response = await fetch(`/api/cases?id=${id}`);
@@ -52,14 +42,14 @@ async function fetchCaseData(id: string) {
 }
 
 export default function CaseForm({ onSubmit, id }: { onSubmit?: Function, id?: string }) {
-    const [caseData, setCaseData] = useState(initialCaseState);
+    const [caseData, setCaseData] = useState<CaseData>(createCaseData());
     const [open, setOpen] = useState(false);
-    const [selectedFiles, setSelectedFiles] = useState(null);
-    const [uploadStatus, setUploadStatus] = useState(null);
-    const [files, setFiles] = useState([]);
+    const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
+    const [uploadStatus, setUploadStatus] = useState<string | null>(null);
+    const [files, setFiles] = useState<{ key: string; name: string }[]>([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [thumbnailURLs, setThumbnailURLs] = useState([]);
+    const [error, setError] = useState<string | null>(null);
+    const [thumbnailURLs, setThumbnailURLs] = useState<string[]>([]);
 
     const router = useRouter();
 
@@ -75,7 +65,8 @@ export default function CaseForm({ onSubmit, id }: { onSubmit?: Function, id?: s
             setLoading(false);
             return;
         }
-        fetchFiles();
+        fetchFiles()
+            .catch((err) => setError(err.message));
     }, [caseData.guid]);
 
     useEffect(() => {
@@ -117,18 +108,27 @@ export default function CaseForm({ onSubmit, id }: { onSubmit?: Function, id?: s
         return (await response.json());
     }
 
-    const handleCreateOrUpdate = async (caseData: any) => {
+    const handleCreateOrUpdate = async (caseData: CaseData) => {
         const response = await fetch('/api/cases', {
-            method: caseData._id ? 'PUT' : 'POST',
+            method: caseData.guid ? 'PUT' : 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(caseData),
         });
     };
 
-    const handleChange = (e: { target: { name: any; value: any; }; }) => setCaseData({
-        ...caseData,
-        [e.target.name]: e.target.value
-    });
+    const handleChange = (e: { name?: string; value: string }) => {
+        setCaseData({
+            ...caseData,
+            [e.name as string]: e.value
+        });
+    };
+    const handleSelectChange = (e: SelectChangeEvent<{name?:string; value: unknown}>) => {
+        setCaseData({
+            ...caseData,
+            [e.target.name as string]: e.target.value
+        });
+    };
+
 
     const addQuestion = () => setCaseData({
         ...caseData,
@@ -145,35 +145,35 @@ export default function CaseForm({ onSubmit, id }: { onSubmit?: Function, id?: s
         });
     };
 
-    const handleDateChange = (id: number, newDate: any) => {
+    const handleDateChange = (id: number, newDate: Dayjs | null) => {
         const updatedRecords = caseData.recordsReviewed.map(
-            record => record.id === id ? { ...record, date: newDate } : record
+            record => record.id === id ? { ...record, date: newDate! } : record
         );
         setCaseData({ ...caseData, recordsReviewed: updatedRecords });
     };
 
-    const handleTypeChange = (id: number, newType: any) => {
+    const handleTypeChange = (id: number, newType: string) => {
         const updatedRecords = caseData.recordsReviewed.map(
             record => record.id === id ? { ...record, type: newType } : record
         );
         setCaseData({ ...caseData, recordsReviewed: updatedRecords });
     };
 
-    const handleEdit = (id: number, updatedRecord: any) => {
+    const handleEdit = (id: number, updatedRecord: Record) => {
         const updatedRecords = caseData.recordsReviewed.map(
             record => record.id === id ? updatedRecord : record
         );
         setCaseData({ ...caseData, recordsReviewed: updatedRecords });
     };
 
-    const handleEditQuestion = (id: number, updatedQuestion: any) => {
+    const handleEditQuestion = (id: number, updatedQuestion: Question) => {
         const updatedQuestions = caseData.questions.map(
             question => question.id === id ? updatedQuestion : question
         );
         setCaseData({ ...caseData, questions: updatedQuestions });
     }
 
-    const handleEditResponse = (id: number, updatedQuestion: any) => {
+    const handleEditResponse = (id: number, updatedQuestion: Question) => {
         const updatedQuestions = caseData.questions.map(
             question => question.id === id ? updatedQuestion : question
         );
@@ -190,7 +190,7 @@ export default function CaseForm({ onSubmit, id }: { onSubmit?: Function, id?: s
         setCaseData({ ...caseData, questions: updatedQuestions });
     }
 
-    async function handleSubmit(e: { preventDefault: () => void; }) {
+    async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         const resp = await handleCreateOrUpdate(caseData);
         router.push('/dashboard/cases');
@@ -205,13 +205,13 @@ export default function CaseForm({ onSubmit, id }: { onSubmit?: Function, id?: s
         setUploadStatus(null);
     };
 
-    const handleFileChange = (e: { target: { files: any; }; }) => {
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSelectedFiles(e.target.files);
     };
 
     const handleUpload = async () => {
         const formData = new FormData();
-        Array.from(selectedFiles).forEach((file) => {
+        Array.from(selectedFiles!).forEach((file) => {
             formData.append('files', file);
         });
         formData.append('guid', caseData.guid);
@@ -231,7 +231,7 @@ export default function CaseForm({ onSubmit, id }: { onSubmit?: Function, id?: s
         }
     };
 
-    const handleDeleteFile = async (key: any) => {
+    const handleDeleteFile = async (key: string) => {
         try {
             const response = await fetch(`/api/upload?key=${key}`, {
                 method: 'DELETE',
@@ -247,14 +247,14 @@ export default function CaseForm({ onSubmit, id }: { onSubmit?: Function, id?: s
 
     return (
         <Box component="form" onSubmit={handleSubmit}>
-            <MetadataSection caseData={caseData} handleChange={handleChange} handleClickOpen={handleClickOpen} open={open} />
+            <MetadataSection caseData={caseData} handleChange={handleChange} handleSelectChange={handleSelectChange} handleClickOpen={handleClickOpen} handleDeleteFile={handleDeleteFile}/>
             <DialogModal open={open} handleClose={handleClose} handleFileChange={handleFileChange} uploadStatus={uploadStatus} handleUpload={handleUpload} selectedFiles={selectedFiles} />
             {files?.length ? <FileList files={files} onDeleteFile={handleDeleteFile} /> : null}
             {thumbnailURLs?.length ? <ImageGrid thumbnailURLs={thumbnailURLs} /> : null}
-            <CardGrid title="Records Reviewed" items={caseData.recordsReviewed} onAddItem={addRecord} renderItem={(record: any) => (
+            <CardGrid title="Records Reviewed" items={caseData.recordsReviewed} onAddItem={addRecord} renderItem={(record: Record) => (
                 <RecordCard record={record} onDateChange={handleDateChange} onTypeChange={handleTypeChange} onEdit={handleEdit} onDelete={handleDelete} />
             )} />
-            <CardGrid title="Questions" items={caseData.questions} onAddItem={addQuestion} renderItem={(question: any) => (
+            <CardGrid title="Questions" items={caseData.questions} onAddItem={addQuestion} renderItem={(question: Question) => (
                 <QuestionCard question={question} onEdit={handleEditQuestion} onDelete={handleDeleteQuestion} />
             )} />
             <Button type="submit" variant="contained">{id ? 'Update Case' : 'Submit Case'}</Button>
@@ -262,95 +262,9 @@ export default function CaseForm({ onSubmit, id }: { onSubmit?: Function, id?: s
     );
 }
 
-function MetadataSection({ caseData, handleChange, handleClickOpen, open }) {
-    return (
-        <Grid container spacing={2} mb={2}>
-            <Grid item xs={12} md={4}>
-                <FormControl fullWidth>
-                    <InputLabel>State</InputLabel>
-                    <Select name="state" value={caseData.state} onChange={handleChange}>
-                        <MenuItem value="DRAFT">Draft</MenuItem>
-                        <MenuItem value="Documents Uploaded">Documents Uploaded</MenuItem>
-                        <MenuItem value="Pages Classified">Pages Classified</MenuItem>
-                        <MenuItem value="Medical Summary Created">Medical Summary Created</MenuItem>
-                        <MenuItem value="Questions Transcribed">Questions Transcribed</MenuItem>
-                        <MenuItem value="Review In Progress">Review In Progress</MenuItem>
-                        <MenuItem value="Review Completed">Review Completed</MenuItem>
-                        <MenuItem value="Approval In Progress">Approval In Progress</MenuItem>
-                        <MenuItem value="Approved">Approved</MenuItem>
-                        <MenuItem value="Report Generated">Report Generated</MenuItem>
-                        <MenuItem value="Report Emailed">Report Emailed</MenuItem>
-                    </Select>
-                </FormControl>
-            </Grid>
-            <Grid item xs={12} md={4}>
-                <FormControl fullWidth>
-                    <InputLabel>Priority</InputLabel>
-                    <Select name="priority" value={caseData.priority} onChange={handleChange}>
-                        <MenuItem value="standard">Standard</MenuItem>
-                        <MenuItem value="rush">Rush</MenuItem>
-                        <MenuItem value="ludacris">Ludacris</MenuItem>
-                    </Select>
-                </FormControl>
-            </Grid>
-            <Grid item xs={12} md={4}>
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <DatePicker
-                        label="Due Date"
-                        value={dayjs(caseData.dueDate)}
-                        onChange={(newValue) => handleChange({ target: { name: 'dueDate', value: newValue } })}
-                        renderInput={(params) => <TextField {...params} fullWidth />}
-                    />
-                </LocalizationProvider>
-            </Grid>
-            <Grid item xs={12} md={4}>
-                <FormControl fullWidth>
-                    <InputLabel>Analyst</InputLabel>
-                    <Select name="analyst" value={caseData.analyst} onChange={handleChange}>
-                        {/* Add options for analysts */}
-                    </Select>
-                </FormControl>
-            </Grid>
-            <Grid item xs={12} md={4}>
-                <FormControl fullWidth>
-                    <InputLabel>Reviewer</InputLabel>
-                    <Select name="reviewer" value={caseData.reviewer} onChange={handleChange}>
-                        {/* Add options for reviewers */}
-                    </Select>
-                </FormControl>
-            </Grid>
-            <Grid item xs={12} md={4}>
-                <FormControl fullWidth>
-                    <InputLabel>Approver</InputLabel>
-                    <Select name="approver" value={caseData.approver} onChange={handleChange}>
-                        {/* Add options for approvers */}
-                    </Select>
-                </FormControl>
-            </Grid>
-            <Grid item xs={12}>
-                <Typography variant="body2">Uploads:</Typography>
-                <List>
-                    {caseData.uploadDetails.map((upload, index) => (
-                        <ListItem key={index}>
-                            <ListItemIcon>
-                                <InsertDriveFileIcon />
-                            </ListItemIcon>
-                            <ListItemText primary={upload.filename} />
-                            <IconButton edge="end" onClick={() => handleDeleteFile(upload.key)}>
-                                <DeleteIcon />
-                            </IconButton>
-                        </ListItem>
-                    ))}
-                </List>
-            </Grid>
-            <Grid item xs={12}>
-                <Button variant="contained" fullWidth onClick={handleClickOpen}>Upload</Button>
-            </Grid>
-        </Grid>
-    );
-}
 
-function DialogModal({ open, handleClose, handleFileChange, uploadStatus, handleUpload, selectedFiles }) {
+
+function DialogModal({ open, handleClose, handleFileChange, uploadStatus, handleUpload, selectedFiles }: { open: boolean, handleClose: () => void, handleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void, uploadStatus: string | null, handleUpload: () => void, selectedFiles: FileList | null }) {
     return (
         <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
             <DialogTitle>Upload Documents</DialogTitle>
@@ -367,7 +281,7 @@ function DialogModal({ open, handleClose, handleFileChange, uploadStatus, handle
     );
 }
 
-function FileList({ files, onDeleteFile }) {
+function FileList({ files, onDeleteFile }: { files: { key: string; name: string }[], onDeleteFile: (key: string) => void }) {
     return (
         <Grid mb={2}>
             <Typography variant="h6">Files</Typography>
@@ -388,29 +302,29 @@ function FileList({ files, onDeleteFile }) {
     );
 }
 
-function ImageGrid({ thumbnailURLs }) {
+function ImageGrid({ thumbnailURLs }: { thumbnailURLs: string[] }) {
     return (
         <Grid container spacing={2}>
             {thumbnailURLs.map((url, index) => (
-                <Grid item xs={12} sm={6} md={4} key={index}>
-                    <img src={url} style={{ width: '100%' }} alt="" />
+                <Grid size={{xs: 12, sm:6, md:4}} key={index}>
+                    <Image src={url} style={{ width: '100%' }} alt="" />
                 </Grid>
             ))}
         </Grid>
     );
 }
 
-function CardGrid({ title, items, renderItem, onAddItem }) {
+function CardGrid({ title, items, renderItem, onAddItem }: { title: string, items: any[], renderItem: (item: any) => JSX.Element, onAddItem: () => void }) {
     return (
         <Box mb={2}>
             <Typography variant="h6">{title}</Typography>
             <Grid container spacing={2}>
-                {items?.map((item) => (
-                    <Grid item xs={12} sm={6} md={4} key={item.id}>
+                {items?.map((item, idx) => (
+                    <Grid size={{xs: 12, sm:6, md:4}} key={idx}>
                         {renderItem(item)}
                     </Grid>
                 ))}
-                <Grid item xs={12}>
+                <Grid size={{xs:12}}>
                     <Button onClick={onAddItem} startIcon={<AddIcon />}>Add New</Button>
                 </Grid>
             </Grid>
@@ -418,22 +332,22 @@ function CardGrid({ title, items, renderItem, onAddItem }) {
     );
 }
 
-function RecordCard({ record, onDateChange, onTypeChange, onEdit, onDelete }) {
+function RecordCard({ record, onDateChange, onTypeChange, onEdit, onDelete }: { record: Record, onDateChange: (id: number, newDate: Dayjs | null) => void, onTypeChange: (id: number, newType: string) => void, onEdit: (id: number, updatedRecord: Record) => void, onDelete: (id: number) => void }) {
     return (
         <Card>
             <CardContent>
                 <Grid container spacing={2} mb={2}>
-                    <Grid item xs={6}>
+                    <Grid size={{xs:6}}>
                         <LocalizationProvider dateAdapter={AdapterDayjs}>
                             <DatePicker
                                 label="Date"
                                 value={dayjs(record.date)}
                                 onChange={(newValue) => onDateChange(record.id, newValue)}
-                                renderInput={(params) => <TextField {...params} fullWidth />}
+                                // renderInput={(params) => <TextField {...params} fullWidth />}
                             />
                         </LocalizationProvider>
                     </Grid>
-                    <Grid item xs={6}>
+                    <Grid size={{xs:6}}>
                         <TextField
                             label="Type"
                             value={record.type}
@@ -456,10 +370,10 @@ function RecordCard({ record, onDateChange, onTypeChange, onEdit, onDelete }) {
     );
 }
 
-function QuestionCard({ question, onEdit, onDelete }) {
+function QuestionCard({ question, onEdit, onDelete }: { question: Question, onEdit: (id: number, updatedQuestion: Question) => void, onDelete: (id: number) => void }) {
     return (
         <Card>
-            <CardContent>
+<CardContent>
                 <TextField
                     label="Question"
                     value={question.question}

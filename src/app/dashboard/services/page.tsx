@@ -1,36 +1,33 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { Box, Button, TextField, Typography, Select, MenuItem, FormControl, InputLabel, Drawer, IconButton } from '@mui/material';
+import React, {Suspense, useState, useEffect, SetStateAction, Dispatch} from 'react';
+import {
+    Box,
+    Button,
+    TextField,
+    Typography,
+    Select,
+    MenuItem,
+    FormControl,
+    InputLabel,
+    Drawer,
+    IconButton,
+    CircularProgress,
+    SelectChangeEvent
+} from '@mui/material';
 import Grid from '@mui/material/Grid2'
+import Image from 'next/image';
 import MedicalService from '@/app/components/dashboard/services/medicalService';
 import MedicalPage from '@/app/components/dashboard/services/medicalPage';
-import { createService, updateService, deleteService } from '@/app/lib/servicesCallbacks';
-import { v4 as uuidv4 } from 'uuid';
-import { useSearchParams } from "next/navigation";
+import {createService, updateService, deleteService} from '@/app/lib/servicesCallbacks';
+import {v4 as uuidv4} from 'uuid';
+import {useSearchParams} from "next/navigation";
 import CloseIcon from '@mui/icons-material/Close';
 
-export default function DnDPage() {
-    const [availableItems, setAvailableItems] = useState<{ bucket: string, key: string, url: string }[]>([]);
-    const [droppedItems, setDroppedItems] = useState<{ [key: string]: { bucket: string, key: string }[] }>({});
-    const [droppableAreas, setDroppableAreas] = useState<string[]>([]);
-    const [caseGuid, setCaseGuid] = useState('');
-    const [uploadGuid, setUploadGuid] = useState('');
-    const [droppableInfo, setDroppableInfo] = useState<{ [key: string]: { date: string, type: string, summary: string } }>({});
-    const [showCreateService, setShowCreateService] = useState(false);
-    const [zoom, setZoom] = useState<number>(100);
-    const [drawerOpen, setDrawerOpen] = useState(false);
-    const [drawerItems, setDrawerItems] = useState<{ id: string, bucket: string, key: string, url: string }[]>([]);
-    const [drawerWidth, setDrawerWidth] = useState<number>(400);
 
+// @ts-ignore
+function SearchParamsComponent({setCaseGuid, setUploadGuid}) {
     const searchParams = useSearchParams();
-
-    useEffect(() => {
-        const savedZoom = localStorage.getItem('zoom');
-        if (savedZoom) {
-            setZoom(parseInt(savedZoom, 10));
-        }
-    }, []);
 
     useEffect(() => {
         if (searchParams.get("caseGuid")) {
@@ -40,7 +37,39 @@ export default function DnDPage() {
         if (searchParams.get('uploadGuid')) {
             setUploadGuid(searchParams.get('uploadGuid') || "")
         }
-    }, [searchParams]);
+    }, [searchParams, setCaseGuid, setUploadGuid]);
+
+    return null;
+};
+
+export default function DnDPage() {
+    const [availableItems, setAvailableItems] = useState<{
+        id: string,
+        bucket: string,
+        key: string,
+        url: string
+    }[]>([]);
+    const [droppedItems, setDroppedItems] = useState<{
+        [key: string]: { id: string, bucket: string, key: string, url: string }[]
+    }>({});
+    const [droppableAreas, setDroppableAreas] = useState<string[]>([]);
+    const [caseGuid, setCaseGuid] = useState('');
+    const [uploadGuid, setUploadGuid] = useState('');
+    const [droppableInfo, setDroppableInfo] = useState<{
+        [key: string]: { date: string, type: string, summary: string }
+    }>({});
+    const [showCreateService, setShowCreateService] = useState(false);
+    const [zoom, setZoom] = useState<number>(100);
+    const [drawerOpen, setDrawerOpen] = useState(false);
+    const [drawerItems, setDrawerItems] = useState<{ id: string, bucket: string, key: string, url: string }[]>([]);
+    const [drawerWidth, setDrawerWidth] = useState<number>(400);
+
+    useEffect(() => {
+        const savedZoom = localStorage.getItem('zoom');
+        if (savedZoom) {
+            setZoom(parseInt(savedZoom, 10));
+        }
+    }, []);
 
     useEffect(() => {
         if (caseGuid && uploadGuid) {
@@ -51,22 +80,27 @@ export default function DnDPage() {
     async function handleAddDroppable() {
         const serviceGuid = uuidv4().toString();
         setDroppableAreas([...droppableAreas, serviceGuid]);
-        setDroppedItems((prev) => ({ ...prev, [serviceGuid]: [] }));
-        setDroppableInfo((prev) => ({ ...prev, [serviceGuid]: { date: '', type: '', summary: '' } }));
-        await createService({ guid: serviceGuid, caseGuid: caseGuid, date: '', type: '', summary: '' });
+        setDroppedItems((prev) => ({...prev, [serviceGuid]: []}));
+        setDroppableInfo((prev) => ({...prev, [serviceGuid]: {date: '', type: '', summary: ''}}));
+        await createService({guid: serviceGuid, caseGuid: caseGuid, date: '', type: '', summary: ''});
     }
 
     async function handleDeleteDroppable(id: string) {
         setDroppedItems((prev) => {
-            const newDroppedItems = { ...prev };
+            const newDroppedItems = {...prev};
             const itemsToReAdd = newDroppedItems[id];
             delete newDroppedItems[id];
-            setAvailableItems((prevAvailable) => [...prevAvailable, ...itemsToReAdd.map((item) => ({ bucket: item.bucket, key: item.key, url: '' }))]);
+            setAvailableItems((prevAvailable) => [...prevAvailable, ...itemsToReAdd.map((item) => ({
+                bucket: item.bucket,
+                key: item.key,
+                url: '',
+                id: item.id
+            }))]);
             return newDroppedItems;
         });
         setDroppableAreas((prev) => prev.filter((area) => area !== id));
         setDroppableInfo((prev) => {
-            const newDroppableInfo = { ...prev };
+            const newDroppableInfo = {...prev};
             delete newDroppableInfo[id];
             return newDroppableInfo;
         });
@@ -81,12 +115,12 @@ export default function DnDPage() {
                 [field]: value,
             },
         }));
-        await updateService({ guid: id, [field]: value });
+        await updateService({guid: id, [field]: value});
     }
 
     async function handleServiceChange(itemId: string, serviceId: string) {
         setDroppedItems((prev) => {
-            const newDroppedItems = { ...prev };
+            const newDroppedItems = {...prev};
             for (const key in newDroppedItems) {
                 newDroppedItems[key] = newDroppedItems[key].filter(item => item.key !== itemId);
             }
@@ -95,7 +129,7 @@ export default function DnDPage() {
             const item = availableItems.find(item => item.key == itemId)
             // @ts-ignore
             newDroppedItems[serviceId] = [...(newDroppedItems[serviceId] || []), item];
-            updateService({ guid: serviceId, items: newDroppedItems[serviceId] });
+            updateService({guid: serviceId, items: newDroppedItems[serviceId]});
             return newDroppedItems;
         });
         setAvailableItems((prev) => prev.filter(item => item.key !== itemId));
@@ -118,6 +152,7 @@ export default function DnDPage() {
         const data = await response.json();
         return data.body;
     }
+
     async function fetchMedicalServicesAndThumbnails(caseGuid: string, uploadGuid: string) {
         try {
             const [services, thumbnails] = await Promise.all([
@@ -126,7 +161,7 @@ export default function DnDPage() {
             ]);
 
             const newDroppableAreas = services?.map((service: any) => service.guid);
-            const newDroppedItems: { [key: string]: { bucket: string, key: string, url: string }[] } = {};
+            const newDroppedItems: { [key: string]: { bucket: string, key: string, url: string, id: string }[] } = {};
             const newDroppableInfo: { [key: string]: { date: string, type: string, summary: string } } = {};
 
             services.forEach((service: any) => {
@@ -161,7 +196,7 @@ export default function DnDPage() {
         }
     }
 
-    const handleZoomChange = (event: React.ChangeEvent<{ value: unknown }>) => {
+    const handleZoomChange = (event: SelectChangeEvent<number>) => {
         const newZoom = event.target.value as number;
         setZoom(newZoom);
         localStorage.setItem('zoom', newZoom.toString());
@@ -197,12 +232,11 @@ export default function DnDPage() {
         document.removeEventListener('mouseup', handleMouseUp);
     };
 
-    // @ts-ignore
-    // @ts-ignore
-    // @ts-ignore
-    // @ts-ignore
     return (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box sx={{display: 'flex', flexDirection: 'column', gap: 2}}>
+            <Suspense fallback={<CircularProgress/>}>
+                <SearchParamsComponent setCaseGuid={setCaseGuid} setUploadGuid={setUploadGuid}/>
+            </Suspense>
             <Box>
                 <TextField
                     label="GUID"
@@ -212,13 +246,13 @@ export default function DnDPage() {
                 />
             </Box>
             <Box>
-                <Button variant="contained" onClick={handleAddDroppable} sx={{ mb: 2 }}>
+                <Button variant="contained" onClick={handleAddDroppable} sx={{mb: 2}}>
                     Create Medical Service
                 </Button>
                 <Typography variant="h6">Medical Services</Typography>
                 <Grid container spacing={2}>
                     {droppableAreas.map((id) => (
-                        <Grid size={{xs:12, sm:6, md:4}} key={id}>
+                        <Grid size={{xs: 12, sm: 6, md: 4}} key={id}>
                             <MedicalService
                                 id={id}
                                 info={droppableInfo[id]}
@@ -239,7 +273,7 @@ export default function DnDPage() {
             </Box>
             <Box>
                 <Typography variant="h6">Pages - {availableItems?.length}</Typography>
-                <FormControl fullWidth sx={{ mb: 2 }}>
+                <FormControl fullWidth sx={{mb: 2}}>
                     <InputLabel>Zoom</InputLabel>
                     <Select value={zoom} onChange={handleZoomChange}>
                         {[...Array(9)].map((_, i) => (
@@ -249,7 +283,7 @@ export default function DnDPage() {
                 </FormControl>
                 <Grid container spacing={2}>
                     {availableItems.map((item, index) => (
-                        <Grid  size={{xs: getGridItemSize()}} key={item.key}>
+                        <Grid size={{xs: getGridItemSize()}} key={item.key}>
                             <MedicalPage
                                 id={item.key}
                                 index={index}
@@ -261,10 +295,11 @@ export default function DnDPage() {
                                 selectedService=""
                                 onServiceChange={handleServiceChange}
                                 url={item.url}
+                                thumbnail={true}
                                 zoom={zoom}
                             >
-                                <img src={item.url} alt={item.key} style={{ width: '100%' }} />
                             </MedicalPage>
+                            <img src={item.url} alt={item.key} style={{width: '100%'}}/>
                         </Grid>
                     ))}
                 </Grid>
@@ -273,13 +308,13 @@ export default function DnDPage() {
                 anchor="right"
                 open={drawerOpen}
                 onClose={handleCloseDrawer}
-                PaperProps={{ style: { width: drawerWidth } }}
-                ModalProps={{ keepMounted: true }}
+                PaperProps={{style: {width: drawerWidth}}}
+                ModalProps={{keepMounted: true}}
                 variant="persistent"
             >
-                <Box sx={{ width: '100%', padding: 2, position: 'relative' }}>
-                    <IconButton onClick={handleCloseDrawer} sx={{ mb: 2 }}>
-                        <CloseIcon />
+                <Box sx={{width: '100%', padding: 2, position: 'relative'}}>
+                    <IconButton onClick={handleCloseDrawer} sx={{mb: 2}}>
+                        <CloseIcon/>
                     </IconButton>
                     <Box
                         sx={{
@@ -295,8 +330,8 @@ export default function DnDPage() {
                     />
                     <Grid container spacing={2}>
                         {drawerItems.map((item, index) => (
-                            <Grid size={{xs:12}} key={item.key}>
-                                <img src={item.url} alt={`Page ${index + 1}`} style={{ width: '100%' }} />
+                            <Grid size={{xs: 12}} key={item.key}>
+                                <Image src={item.url} alt={`Page ${index + 1}`} style={{width: '100%'}}/>
                             </Grid>
                         ))}
                     </Grid>
