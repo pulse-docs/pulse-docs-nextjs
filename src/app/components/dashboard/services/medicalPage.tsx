@@ -1,6 +1,5 @@
 import React from 'react';
 import {Box, Card, CardContent, FormControl, InputLabel, MenuItem, Select} from '@mui/material';
-import Image from 'next/image';
 import dayjs from 'dayjs';
 
 interface PageProps {

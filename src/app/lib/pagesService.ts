@@ -3,7 +3,7 @@ import {NextResponse} from "next/server";
 
 const s3 = new AWS.S3();
 
-export async function getSignedURL(bucketName: string, key: string) {
+export function getSignedURL(bucketName: string, key: string) {
     return s3.getSignedUrl('getObject', {
         Bucket: bucketName,
         Key: key,
@@ -16,7 +16,7 @@ export async function getSignedURLs(objs: { bucket: string, key: string }[]) {
         return {
             bucket: obj.bucket,
             key: obj.key,
-            url: await getSignedURL(obj.bucket, obj.key)
+            url: getSignedURL(obj.bucket, obj.key)
         }
     }));
 }

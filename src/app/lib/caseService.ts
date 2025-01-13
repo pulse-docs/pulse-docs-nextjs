@@ -1,7 +1,6 @@
-import { unstable_noStore } from "next/cache";
+import {unstable_noStore} from "next/cache";
 import connect from '../gateway/mongo/mongo.resource';
-import { ObjectId } from "bson";
-import {getSignedURL, getThumbnailUrls} from "@/app/lib/pagesService";
+import {getSignedURL} from "@/app/lib/pagesService";
 
 export async function getCases() {
     unstable_noStore();
@@ -70,6 +69,12 @@ export async function createCase(caseData: any) {
     try {
         const db = await connect();
         const col = db.collection("cases");
+
+        // Overrride from default interface
+        if (caseData._id === "") {
+            delete caseData._id;
+        }
+
         const newCase = { ...caseData, createdAt: Date.now() };
         await col.insertOne(newCase);
         return newCase;
@@ -86,7 +91,7 @@ export async function updateCase(caseData: any) {
     try {
         const db = await connect();
         const col = db.collection("cases");
-        await col.updateOne({ "_id": new ObjectId(caseData.id) }, { $set: caseData });
+        await col.updateOne({ "guid": caseData.guid }, { $set: caseData });
     } catch (err) {
         console.error('Failed to update case:', err);
         throw new Error('Failed to update case.');
@@ -94,12 +99,12 @@ export async function updateCase(caseData: any) {
     return caseData;
 }
 
-export async function deleteCase(id: string) {
+export async function deleteCase(guid: string) {
     unstable_noStore();
     try {
         const db = await connect();
         const col = db.collection("cases");
-        await col.deleteOne({ "_id": new ObjectId(id) });
+        await col.deleteOne({ "guid": guid });
     } catch (err) {
         console.error('Failed to delete case:', err);
         throw new Error('Failed to delete case.');

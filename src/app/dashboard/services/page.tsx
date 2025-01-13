@@ -1,25 +1,25 @@
 "use client";
 
-import React, {Suspense, useState, useEffect, SetStateAction, Dispatch} from 'react';
+import React, {Suspense, useEffect, useState} from 'react';
 import {
     Box,
     Button,
-    TextField,
-    Typography,
-    Select,
-    MenuItem,
-    FormControl,
-    InputLabel,
-    Drawer,
-    IconButton,
     CircularProgress,
-    SelectChangeEvent
+    Drawer,
+    FormControl,
+    IconButton,
+    InputLabel,
+    MenuItem,
+    Select,
+    SelectChangeEvent,
+    TextField,
+    Typography
 } from '@mui/material';
 import Grid from '@mui/material/Grid2'
 import Image from 'next/image';
 import MedicalService from '@/app/components/dashboard/services/medicalService';
 import MedicalPage from '@/app/components/dashboard/services/medicalPage';
-import {createService, updateService, deleteService} from '@/app/lib/servicesCallbacks';
+import {createService, deleteService, updateService} from '@/app/lib/servicesCallbacks';
 import {v4 as uuidv4} from 'uuid';
 import {useSearchParams} from "next/navigation";
 import CloseIcon from '@mui/icons-material/Close';
@@ -331,7 +331,7 @@ export default function DnDPage() {
                     <Grid container spacing={2}>
                         {drawerItems.map((item, index) => (
                             <Grid size={{xs: 12}} key={item.key}>
-                                <Image src={item.url} alt={`Page ${index + 1}`} style={{width: '100%'}}/>
+                                <img src={item.url} alt={`Page ${index + 1}`} style={{width: '100%'}}/>
                             </Grid>
                         ))}
                     </Grid>

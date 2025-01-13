@@ -478,7 +478,7 @@ export function CaseEdit({ guid }: { guid: string }) {
                     <Grid container spacing={2}>
                         {drawerItems.map((item, index) => (
                             <Grid xs={12} key={item.key}>
-                                <Image src={item.url} alt={`Page ${index + 1}`} style={{ width: '100%' }} />
+                                <img src={item.url} alt={`Page ${index + 1}`} style={{ width: '100%' }} />
                             </Grid>
                         ))}
                     </Grid>

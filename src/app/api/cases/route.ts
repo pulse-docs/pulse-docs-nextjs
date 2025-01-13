@@ -9,7 +9,6 @@ export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams;
     if (searchParams.get('guid')) {
         const cases = await getCase(searchParams.get('guid') as string);
-        console.log("API CASEs: ", cases);
         return NextResponse.json({ status: 200, body: cases });
     }
 

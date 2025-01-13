@@ -20,7 +20,6 @@ import {
     Typography
 } from '@mui/material';
 import Grid from '@mui/material/Grid2';
-import Image from 'next/image'
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
@@ -214,7 +213,7 @@ export default function CaseForm({ onSubmit, id }: { onSubmit?: Function, id?: s
         Array.from(selectedFiles!).forEach((file) => {
             formData.append('files', file);
         });
-        formData.append('guid', caseData.guid);
+        formData.append('guidCase', caseData.guid);
 
         try {
             const response = await fetch('/api/upload', {
@@ -307,7 +306,7 @@ function ImageGrid({ thumbnailURLs }: { thumbnailURLs: string[] }) {
         <Grid container spacing={2}>
             {thumbnailURLs.map((url, index) => (
                 <Grid size={{xs: 12, sm:6, md:4}} key={index}>
-                    <Image src={url} style={{ width: '100%' }} alt="" />
+                    <img src={url} style={{ width: '100%' }} alt="" />
                 </Grid>
             ))}
         </Grid>

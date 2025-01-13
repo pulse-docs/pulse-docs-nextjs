@@ -1,11 +1,6 @@
 // pages/api/getImageUrls.js
-import AWS from 'aws-sdk';
 import {NextRequest, NextResponse} from "next/server";
-import {getSignedURL, getThumbnailUrls} from "@/app/lib/pagesService";
-
-
-
-
+import {getThumbnailUrls} from "@/app/lib/pagesService";
 
 
 export async function GET(req: NextRequest) {

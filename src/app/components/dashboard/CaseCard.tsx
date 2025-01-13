@@ -51,21 +51,20 @@ export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, us
     const [uploadStatus, setUploadStatus] = useState<string | null>(null);
     const [files, setFiles] = useState<{ key: string, name: string }[]>([]);
     const router = useRouter();
-    console.log('users from casecard', users)
 
     const handleDateChange = (date: any) => {
-        onFieldChange(caseData._id, 'dueDate', date);
+        onFieldChange(caseData.guid, 'dueDate', date);
     };
 
     const handlePriorityChange = (event: { target: { value: any; }; }) => {
         const newPriority = event.target.value;
-        onFieldChange(caseData._id, 'priority', newPriority);
+        onFieldChange(caseData.guid, 'priority', newPriority);
         updateDueDate(newPriority);
     };
 
     const handleStateChange = (event: { target: { value: any; }; }) => {
         const newState = event.target.value;
-        onFieldChange(caseData._id, 'state', newState);
+        onFieldChange(caseData.guid, 'state', newState);
     };
 
     const updateDueDate = (priority: any) => {
@@ -86,12 +85,13 @@ export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, us
                 dueDate = createdAtDate;
         }
 
-        onFieldChange(caseData._id, 'dueDate', dueDate);
+        onFieldChange(caseData.guid, 'dueDate', dueDate);
     };
 
     const handleAssigneeChange = (role: string, event: { target: { value: any; }; }) => {
+        console.log(`Assignee change: ${caseData.guid}, ${role}, ${event.target.value}`);
         const newAssignee = event.target.value;
-        onFieldChange(caseData._id, role, newAssignee);
+        onFieldChange(caseData.guid, role, newAssignee);
     };
 
     const getUsersByRole = (role: string) => {
@@ -159,7 +159,7 @@ export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, us
             });
 
             if (response.ok && caseData.uploadDetails) {
-                onFieldChange(caseData._id, 'uploadDetails', caseData.uploadDetails.filter(upload => upload.guidUpload !== guidUpload));
+                onFieldChange(caseData.guid, 'uploadDetails', caseData.uploadDetails.filter(upload => upload.guidUpload !== guidUpload));
             } else {
                 console.error('Error deleting file:', response.statusText);
             }
@@ -281,7 +281,7 @@ export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, us
                         </Button>
                     </Grid>
                     <Grid size={{md:12, lg: 4 }}>
-                        <Button variant="contained" color="secondary" onClick={() => onDelete(caseData._id)}>
+                        <Button variant="contained" color="secondary" onClick={() => onDelete(caseData.guid)}>
                             Delete
                         </Button>
                     </Grid>

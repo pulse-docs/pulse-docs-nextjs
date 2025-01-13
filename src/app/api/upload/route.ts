@@ -60,7 +60,6 @@ async function parseForm(req: NextRequest): Promise<{ fields: formidable.Fields;
 }
 
 export async function POST(req: NextRequest) {
-    console.log('POST /api/upload');
     try {
         // Parse fields and files
         const { fields, files } = await parseForm(req);
@@ -71,7 +70,7 @@ export async function POST(req: NextRequest) {
 
         // Extract the GUID from the fields
         if (!guidCase) {
-            return NextResponse.json({ error: 'GUID is required in the form data' }, { status: 400 });
+            return NextResponse.json({ error: 'GUID is required in the form data', fields }, { status: 400 });
         }
 
         // Use the GUID to create an S3 folder structure

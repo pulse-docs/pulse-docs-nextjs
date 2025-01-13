@@ -1,24 +1,12 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { Typography, Box, Button } from '@mui/material';
+import {useEffect, useState} from 'react';
+import {Box, Button, Typography} from '@mui/material';
 import Grid from '@mui/material/Grid2';
 import CaseCard from '@/app/components/dashboard/CaseCard';
-import { v4 as uuidv4 } from 'uuid';
-import dayjs from 'dayjs';
 import {useRouter} from 'next/navigation';
 
-import {CaseData} from "@/app/types/case";
-
-const initialCaseState = {
-    guid: uuidv4().toString(),
-    state: 'DRAFT',
-    history: '',
-    recordsReviewed: [],
-    questions: [],
-    dueDate: dayjs().valueOf(),
-    priority: 'standard'
-};
+import {CaseData, createCaseData} from "@/app/types/case";
 
 export default function CasesPage() {
     const [cases, setCases] = useState([]);
@@ -43,12 +31,25 @@ export default function CasesPage() {
         }
         // Must get users
         const organization = JSON   .parse(localStorage.getItem('organization') || '{}');
+        // If organization does not have an orgCode, it is invalid
+        if (!organization?.orgCode) {
+            throw new Error('Failed to fetch users. No localStorage[organization]');
+        }
+        console.log('Fetching users');
         const response = await fetch(`/api/users?orgCode=${organization?.orgCode}`);
         if (!response.ok) {
+            console.log(response);
             throw new Error('Failed to fetch users');
         }
+
+        if (response.status !== 200) {
+            console.log(response);
+            throw new Error('Failed to fetch users');
+        }
+
         const userResp = await response.json();
         localStorage.setItem('users', JSON.stringify(userResp));
+        console.log(userResp);
         return userResp;
     }
 
@@ -69,18 +70,18 @@ export default function CasesPage() {
         setSelectedCase(null);
     };
 
-    const handleFieldChange = async (id: string, field: string, value: string) => {
+    const handleFieldChange = async (guid: string, field: string, value: string) => {
         // This is weird. When upload/delete, call fetchCases
-        if (id == "" || field == "" || value == "") {
-            console.log('fetching cases');
+        if (field == "" && value && "") {
             await fetchCases()
             return
         }
 
+        console.log(`handleField Change: guid: ${guid}  field: ${field}  value: ${value}`);
         await fetch(`/api/cases`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: id, [field]: value }),
+            body: JSON.stringify({ guid: guid, [field]: value }),
         });
         await fetchCases();
     };
@@ -94,7 +95,7 @@ export default function CasesPage() {
         await fetch('/api/cases', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(initialCaseState),
+            body: JSON.stringify(createCaseData()),
         });
         await fetchCases();
     };
