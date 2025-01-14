@@ -22,7 +22,7 @@ export async function createUpload(upload: Upload){
 
         const colCases = db.collection("cases");
         // @ts-ignore
-        await colCases.updateOne({"guid": upload.guidCase}, {$push: {uploads: upload.guidUpload}});
+        await colCases.updateOne({"guidCase": upload.guidCase}, {$push: {uploads: upload.guidUpload}});
 
 
         return upload;

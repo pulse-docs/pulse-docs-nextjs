@@ -30,6 +30,8 @@ import dayjs from 'dayjs';
 import {useRouter} from 'next/navigation';
 import {CaseData} from '@/app/types/case';
 
+import {DialogModal} from "@/app/components/dashboard/UploadModal";
+
 interface User {
     id: string;
     full_name: string;
@@ -51,20 +53,20 @@ export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, us
     const [uploadStatus, setUploadStatus] = useState<string | null>(null);
     const [files, setFiles] = useState<{ key: string, name: string }[]>([]);
     const router = useRouter();
-
+    console.log('CaseCard:', caseData);
     const handleDateChange = (date: any) => {
-        onFieldChange(caseData.guid, 'dueDate', date);
+        onFieldChange(caseData.guidCase, 'dueDate', date);
     };
 
     const handlePriorityChange = (event: { target: { value: any; }; }) => {
         const newPriority = event.target.value;
-        onFieldChange(caseData.guid, 'priority', newPriority);
+        onFieldChange(caseData.guidCase, 'priority', newPriority);
         updateDueDate(newPriority);
     };
 
     const handleStateChange = (event: { target: { value: any; }; }) => {
         const newState = event.target.value;
-        onFieldChange(caseData.guid, 'state', newState);
+        onFieldChange(caseData.guidCase, 'state', newState);
     };
 
     const updateDueDate = (priority: any) => {
@@ -85,13 +87,13 @@ export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, us
                 dueDate = createdAtDate;
         }
 
-        onFieldChange(caseData.guid, 'dueDate', dueDate);
+        onFieldChange(caseData.guidCase, 'dueDate', dueDate);
     };
 
     const handleAssigneeChange = (role: string, event: { target: { value: any; }; }) => {
-        console.log(`Assignee change: ${caseData.guid}, ${role}, ${event.target.value}`);
+        console.log(`Assignee change: ${caseData.guidCase}, ${role}, ${event.target.value}`);
         const newAssignee = event.target.value;
-        onFieldChange(caseData.guid, role, newAssignee);
+        onFieldChange(caseData.guidCase, role, newAssignee);
     };
 
     const getUsersByRole = (role: string) => {
@@ -106,6 +108,7 @@ export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, us
     const handleClose = () => {
         setOpen(false);
         setUploadStatus(null); // Reset upload status on close
+        setSelectedFiles(null)
         fetchCases();
     };
 
@@ -121,32 +124,103 @@ export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, us
         }
     };
 
-    const handleUpload = async () => {
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
-
-        const formData = new FormData();
-        Array.from(selectedFiles || []).forEach((file: any) => {
-            formData.append('files', file);
-        });
-        formData.append('guidCase', caseData.guid);
-        formData.append('uploadedBy', user.id);
-
-        try {
-            const response = await fetch('/api/upload', {
-                method: 'POST',
-                body: formData,
-            });
-
-            const result = await response.json();
-            setUploadStatus('Upload successful');
-            setFiles(result.files || []);
-            handleClose();
-        } catch (error) {
-            setUploadStatus('Upload failed');
-        } finally {
-            fetchCases();
-        }
-    };
+    // const handleUpload = async () => {
+    //     const user = JSON.parse(localStorage.getItem('user') || '{}');
+    //     console.log('selected files:',selectedFiles)
+    //     const formData = new FormData();
+    //     Array.from(selectedFiles || []).forEach((file: any) => {
+    //         formData.append('files', file);
+    //         handleUpload(file);
+    //
+    //         const chunkSize = 5 * 1024 * 1024; // 5MB
+    //         const numChunks = Math.ceil(file.size / chunkSize);
+    //         const uploadedParts: { ETag: string; PartNumber: number; }[] = [];
+    //         console.log("numChunks:", numChunks);
+    //         // Step 1: Initialize multipart upload
+    //         return fetch("/api/upload-multipart", {
+    //             method: "POST",
+    //             body: JSON.stringify({ fileName: file.name, fileType: file.type }),
+    //             headers: { "Content-Type": "application/json" },
+    //         })
+    //             .then((response) => response.json())
+    //             .then(({ uploadId }) => {
+    //                 let chain = Promise.resolve();
+    //
+    //                 // Step 2: Process chunks in a chain
+    //                 for (let i = 0; i < numChunks; i++) {
+    //                     chain = chain.then(() => {
+    //                         const start = i * chunkSize;
+    //                         const end = Math.min(start + chunkSize, file.size);
+    //                         const fileChunk = file.slice(start, end);
+    //
+    //                         // Request pre-signed URL for the chunk
+    //                         return fetch("/api/upload-part", {
+    //                             method: "POST",
+    //                             body: JSON.stringify({
+    //                                 fileName: file.name,
+    //                                 uploadId,
+    //                                 partNumber: i + 1,
+    //                             }),
+    //                             headers: { "Content-Type": "application/json" },
+    //                         })
+    //                             .then((response) => response.json())
+    //                             .then(({ url }) =>
+    //                                 // Upload the chunk directly to S3
+    //                                 fetch(url, {
+    //                                     method: "PUT",
+    //                                     body: fileChunk,
+    //                                     headers: { "Content-Type": file.type },
+    //                                 })
+    //                             )
+    //                             .then((uploadResponse) => {
+    //                                 if (!uploadResponse.ok) {
+    //                                     throw new Error(`Failed to upload chunk ${i + 1}`);
+    //                                 }
+    //
+    //                                 // Collect ETag for completion
+    //                                 const etag = uploadResponse.headers.get("ETag");
+    //                                 if (etag) {
+    //                                     uploadedParts.push({ ETag: etag, PartNumber: i + 1 });
+    //                                     console.log(`Uploaded part ${i + 1}: ${etag}`);
+    //                                 }
+    //
+    //                             });
+    //                     });
+    //                 }
+    //                 console.log("Uploaded Parts:", uploadedParts);
+    //                 // Step 3: Complete the upload after all chunks are processed
+    //                 return chain.then(() =>
+    //                     fetch("/api/upload-complete", {
+    //                         method: "POST",
+    //                         body: JSON.stringify({
+    //                             fileName: file.name,
+    //                             uploadId,
+    //                             parts: uploadedParts,
+    //                         }),
+    //                         headers: { "Content-Type": "application/json" },
+    //                     })
+    //                 );
+    //             });
+    //     });
+    //     // formData.append('guidCase', caseData.guidCase);
+    //     // formData.append('uploadedBy', user.id);
+    //     //
+    //     // try {
+    //     //     const response = await fetch('/api/upload', {
+    //     //         method: 'POST',
+    //     //         body: formData,
+    //     //     });
+    //     //
+    //     //     const result = await response.json();
+    //     //     setUploadStatus('Upload successful');
+    //     //     setFiles(result.files || []);
+    //     //     handleClose();
+    //     // } catch (error) {
+    //     //     setUploadStatus('Upload failed');
+    //     // } finally {
+    //     //     fetchCases();
+    //     // }
+    // };
 
     const handleDeleteFile = async (guidCase: string, guidUpload: string, key: string) => {
         try {
@@ -159,7 +233,7 @@ export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, us
             });
 
             if (response.ok && caseData.uploadDetails) {
-                onFieldChange(caseData.guid, 'uploadDetails', caseData.uploadDetails.filter(upload => upload.guidUpload !== guidUpload));
+                onFieldChange(caseData.guidCase, 'uploadDetails', caseData.uploadDetails.filter(upload => upload.guidUpload !== guidUpload));
             } else {
                 console.error('Error deleting file:', response.statusText);
             }
@@ -177,7 +251,7 @@ export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, us
     return (
         <Card sx={{ mb: 2 }}>
             <CardContent>
-                <Typography variant="h6">{caseData.guid}</Typography>
+                <Typography variant="h6">{caseData.guidCase}</Typography>
                 <Grid container spacing={2}>
                     <Grid size={{xs: 12, md:6 }}>
                         <FormControl fullWidth variant="outlined" sx={{ mt: 2 }}>
@@ -264,10 +338,10 @@ export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, us
                                 <InsertDriveFileIcon />
                             </ListItemIcon>
                             <ListItemText primary={upload.filename} />
-                            <IconButton edge="end" onClick={() => handleInventoryClick(caseData.guid, upload.guidUpload)}>
+                            <IconButton edge="end" onClick={() => handleInventoryClick(caseData.guidCase, upload.guidUpload)}>
                                 <InventoryIcon />
                             </IconButton>
-                            <IconButton edge="end" onClick={() => handleDeleteFile(caseData.guid, upload.guidUpload, upload.key)}>
+                            <IconButton edge="end" onClick={() => handleDeleteFile(caseData.guidCase, upload.guidUpload, upload.key)}>
                                 <DeleteIcon />
                             </IconButton>
                         </ListItem>
@@ -276,12 +350,12 @@ export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, us
 
                 <Grid container spacing={2} sx={{ mt: 2 }}>
                     <Grid size={{xs: 12, md:4 }}>
-                        <Button variant="contained" color="primary" onClick={() => onEdit(caseData.guid)}>
+                        <Button variant="contained" color="primary" onClick={() => onEdit(caseData.guidCase)}>
                             Edit
                         </Button>
                     </Grid>
                     <Grid size={{md:12, lg: 4 }}>
-                        <Button variant="contained" color="secondary" onClick={() => onDelete(caseData.guid)}>
+                        <Button variant="contained" color="secondary" onClick={() => onDelete(caseData.guidCase)}>
                             Delete
                         </Button>
                     </Grid>
@@ -292,37 +366,46 @@ export default function CaseCard({ caseData, onEdit, onDelete, onFieldChange, us
                     </Grid>
                 </Grid>
             </CardContent>
-            <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-                <DialogTitle>Upload Documents</DialogTitle>
-                <DialogContent>
-                    <Typography>Select files to upload:</Typography>
-                    <input type="file" multiple onChange={handleFileChange} />
-                    {uploadStatus && <Typography>{uploadStatus}</Typography>}
-                    <List>
-                        {files.map((file: any) => (
-                            <ListItem key={file.key}>
-                                <ListItemIcon>
-                                    <InsertDriveFileIcon />
-                                </ListItemIcon>
-                                <ListItemText primary={file.name} />
-                            </ListItem>
-                        ))}
-                    </List>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={handleClose} color="secondary">
-                        Cancel
-                    </Button>
-                    <Button
-                        onClick={handleUpload}
-                        variant="contained"
-                        color="primary"
-                        disabled={!selectedFiles}
-                    >
-                        Upload
-                    </Button>
-                </DialogActions>
-            </Dialog>
+            <DialogModal
+                open={open}
+                handleClose={handleClose}
+                handleFileChange={handleFileChange}
+                uploadStatus={uploadStatus}
+                files={selectedFiles}
+                guidCase={caseData.guidCase}
+                userId={JSON.parse(localStorage.getItem('user')!).id}>
+            </DialogModal>
+            {/*<Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>*/}
+            {/*    <DialogTitle>Upload Documents</DialogTitle>*/}
+            {/*    <DialogContent>*/}
+            {/*        <Typography>Select files to upload:</Typography>*/}
+            {/*        <input type="file" multiple onChange={handleFileChange} />*/}
+            {/*        {uploadStatus && <Typography>{uploadStatus}</Typography>}*/}
+            {/*        <List>*/}
+            {/*            {files.map((file: any) => (*/}
+            {/*                <ListItem key={file.key}>*/}
+            {/*                    <ListItemIcon>*/}
+            {/*                        <InsertDriveFileIcon />*/}
+            {/*                    </ListItemIcon>*/}
+            {/*                    <ListItemText primary={file.name} />*/}
+            {/*                </ListItem>*/}
+            {/*            ))}*/}
+            {/*        </List>*/}
+            {/*    </DialogContent>*/}
+            {/*    <DialogActions>*/}
+            {/*        <Button onClick={handleClose} color="secondary">*/}
+            {/*            Cancel*/}
+            {/*        </Button>*/}
+            {/*        <Button*/}
+            {/*            onClick={handleUpload}*/}
+            {/*            variant="contained"*/}
+            {/*            color="primary"*/}
+            {/*            disabled={!selectedFiles}*/}
+            {/*        >*/}
+            {/*            Upload*/}
+            {/*        </Button>*/}
+            {/*    </DialogActions>*/}
+            {/*</Dialog>*/}
         </Card>
     );
 }

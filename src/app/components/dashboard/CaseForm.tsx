@@ -31,6 +31,8 @@ import {useRouter} from 'next/navigation';
 import {CaseData, createCaseData, Question, Record} from "@/app/types/case";
 import {MetadataSection} from "@/app/components/dashboard/specific/cases/metadata";
 
+import {DialogModal} from "@/app/components/dashboard/UploadModal";
+
 
 async function fetchCaseData(id: string) {
     const response = await fetch(`/api/cases?id=${id}`);
@@ -208,26 +210,95 @@ export default function CaseForm({ onSubmit, id }: { onSubmit?: Function, id?: s
         setSelectedFiles(e.target.files);
     };
 
-    const handleUpload = async () => {
+    async function handleUpload(){
         const formData = new FormData();
+        formData.append('guidCase', caseData.guid);
         Array.from(selectedFiles!).forEach((file) => {
             formData.append('files', file);
+            const chunkSize = 5 * 1024 * 1024; // 5MB
+            const numChunks = Math.ceil(file.size / chunkSize);
+            const uploadedParts: { ETag: string; PartNumber: number; }[] = [];
+
+            // Step 1: Initialize multipart upload
+            return fetch("/api/upload-multipart", {
+                method: "POST",
+                body: JSON.stringify({ fileName: file.name, fileType: file.type }),
+                headers: { "Content-Type": "application/json" },
+            })
+                .then((response) => response.json())
+                .then(({ uploadId }) => {
+                    let chain = Promise.resolve();
+
+                    // Step 2: Process chunks in a chain
+                    for (let i = 0; i < numChunks; i++) {
+                        chain = chain.then(() => {
+                            const start = i * chunkSize;
+                            const end = Math.min(start + chunkSize, file.size);
+                            const fileChunk = file.slice(start, end);
+
+                            // Request pre-signed URL for the chunk
+                            return fetch("/api/upload-part", {
+                                method: "POST",
+                                body: JSON.stringify({
+                                    fileName: file.name,
+                                    uploadId,
+                                    partNumber: i + 1,
+                                }),
+                                headers: { "Content-Type": "application/json" },
+                            })
+                                .then((response) => response.json())
+                                .then(({ url }) =>
+                                    // Upload the chunk directly to S3
+                                    fetch(url, {
+                                        method: "PUT",
+                                        body: fileChunk,
+                                        headers: { "Content-Type": file.type },
+                                    })
+                                )
+                                .then((uploadResponse) => {
+                                    if (!uploadResponse.ok) {
+                                        throw new Error(`Failed to upload chunk ${i + 1}`);
+                                    }
+
+                                    // Collect ETag for completion
+                                    const etag = uploadResponse.headers.get("ETag");
+                                    if (etag) {
+                                        uploadedParts.push({ ETag: etag, PartNumber: i + 1 });
+                                    }
+
+                                });
+                        });
+                    }
+
+                    // Step 3: Complete the upload after all chunks are processed
+                    return chain.then(() =>
+                        fetch("/api/complete-upload", {
+                            method: "POST",
+                            body: JSON.stringify({
+                                fileName: file.name,
+                                uploadId,
+                                parts: uploadedParts,
+                            }),
+                            headers: { "Content-Type": "application/json" },
+                        })
+                    );
+                });
         });
-        formData.append('guidCase', caseData.guid);
 
-        try {
-            const response = await fetch('/api/upload', {
-                method: 'POST',
-                body: formData,
-            });
+        // try {
+        //     const response = await fetch('/api/upload', {
+        //         method: 'POST',
+        //         body: formData,
+        //     });
+        //
+        //     const result = await response.json();
+        //     setUploadStatus(null);
+        //     handleClose();
+        //     fetchFiles();
+        // } catch (error) {
+        //     setUploadStatus(null);
+        // }
 
-            const result = await response.json();
-            setUploadStatus(null);
-            handleClose();
-            fetchFiles();
-        } catch (error) {
-            setUploadStatus(null);
-        }
     };
 
     const handleDeleteFile = async (key: string) => {
@@ -263,22 +334,6 @@ export default function CaseForm({ onSubmit, id }: { onSubmit?: Function, id?: s
 
 
 
-function DialogModal({ open, handleClose, handleFileChange, uploadStatus, handleUpload, selectedFiles }: { open: boolean, handleClose: () => void, handleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void, uploadStatus: string | null, handleUpload: () => void, selectedFiles: FileList | null }) {
-    return (
-        <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-            <DialogTitle>Upload Documents</DialogTitle>
-            <DialogContent>
-                <Typography>Select files to upload:</Typography>
-                <input type="file" multiple onChange={handleFileChange} />
-                {uploadStatus && <Typography>{uploadStatus}</Typography>}
-            </DialogContent>
-            <DialogActions>
-                <Button onClick={handleClose} color="secondary">Cancel</Button>
-                <Button onClick={handleUpload} variant="contained" color="primary" disabled={!selectedFiles}>Upload</Button>
-            </DialogActions>
-        </Dialog>
-    );
-}
 
 function FileList({ files, onDeleteFile }: { files: { key: string; name: string }[], onDeleteFile: (key: string) => void }) {
     return (

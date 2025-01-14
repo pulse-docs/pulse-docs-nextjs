@@ -4,7 +4,7 @@ import {v4 as uuidv4} from 'uuid';
 export interface CaseData {
     _id: string;
     createdAt: number;
-    guid: string;
+    guidCase: string;
     state: string;
     history: string;
     recordsReviewed: Record[];
@@ -21,7 +21,7 @@ export function createCaseData(): CaseData {
     return {
         _id: '',
         createdAt: Date.now(),
-        guid: uuidv4().toString(),
+        guidCase: uuidv4().toString(),
         state: 'DRAFT',
         history: '',
         recordsReviewed: [],

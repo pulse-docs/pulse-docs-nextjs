@@ -86,8 +86,8 @@ export default function CasesPage() {
         await fetchCases();
     };
 
-    const handleDelete = async (id: string) => {
-        await fetch(`/api/cases?id=${id}`, { method: 'DELETE' });
+    const handleDelete = async (guidCase: string) => {
+        await fetch(`/api/cases?guidCase=${guidCase}`, { method: 'DELETE' });
         await fetchCases();
     };
 
@@ -118,7 +118,7 @@ export default function CasesPage() {
             </Box>
             <Grid container spacing={4}>
                 {cases.map((caseData: CaseData) => (
-                    <Grid size={{ md: 12, lg: 6, xl: 4 }} key={caseData.guid}>
+                    <Grid size={{ md: 12, lg: 6, xl: 4 }} key={caseData.guidCase}>
                         <CaseCard
                             caseData={caseData}
                             users={users}

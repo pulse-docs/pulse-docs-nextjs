@@ -26,13 +26,13 @@ export async function getCases() {
 }
 
 
-export async function getCase(guid: string) {
+export async function getCase(guidCase: string) {
     unstable_noStore();
     try {
         const db = await connect();
         const col = db.collection("cases");
         const cases = await col.aggregate([
-            { $match: { "guid": guid } },
+            { $match: { "guidCase": guidCase } },
             {
                 $lookup: {
                     from: "uploads",

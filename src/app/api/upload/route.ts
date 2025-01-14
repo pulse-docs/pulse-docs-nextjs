@@ -88,7 +88,6 @@ export async function POST(req: NextRequest) {
                 Body: fileStream,
                 ContentType: currentFile.mimetype || 'application/octet-stream',
             };
-
             return s3.upload(uploadParams).promise().then(() => {
                 // Upload to S3 and then save the upload details to the database
                 createUpload({
